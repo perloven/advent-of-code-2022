@@ -1,7 +1,10 @@
 name: Build Gradle project
 
 on:
+  pull_request:
   push:
+    branches:
+      - main
 
 jobs:
   build-gradle-project:
