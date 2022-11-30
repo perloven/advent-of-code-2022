@@ -1,5 +1,5 @@
 package se.perloven.aoc2022
 
-fun main(args: Array<String>) {
-    println("Hello World!")
+fun main() {
+    println("Hello AoC 2022!")
 }
