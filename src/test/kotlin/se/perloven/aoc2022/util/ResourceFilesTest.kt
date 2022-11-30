@@ -8,7 +8,7 @@ internal class ResourceFilesTest {
 
     @Test
     fun readSampleFileLines() {
-        val lines: List<String> = ResourceFiles.readLines("SampleFile.txt")
+        val lines: List<String> = ResourceFiles.readLines("util/sample-resource-file.txt")
 
         assertEquals(5, lines.size)
     }
