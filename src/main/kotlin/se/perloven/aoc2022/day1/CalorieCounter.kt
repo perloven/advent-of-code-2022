@@ -15,33 +15,19 @@ fun main() {
 class CalorieCounter {
 
     fun countMax(): Int {
-        val input = ResourceFiles.readLines("day1/input-1.txt")
-        return splitListOnBlanks(input)
+        return splitListOnBlanks()
             .maxOf { sublist -> sublist.sumOf { it.toInt() } }
     }
 
     fun countTopThree(): Int {
-        val input = ResourceFiles.readLines("day1/input-1.txt")
-        return splitListOnBlanks(input)
+        return splitListOnBlanks()
             .map { sublist -> sublist.sumOf { it.toInt() } }
             .sortedDescending()
             .slice(0..2)
             .sum()
     }
 
-    private fun splitListOnBlanks(input: List<String>): List<List<String>> {
-        val listOfLists = mutableListOf<List<String>>()
-
-        var currentList = mutableListOf<String>()
-        input.forEach {
-            if (it.isBlank()) {
-                listOfLists.add(currentList)
-                currentList = mutableListOf()
-            } else {
-                currentList.add(it)
-            }
-        }
-
-        return listOfLists
+    private fun splitListOnBlanks(): List<List<String>> {
+        return ResourceFiles.readLinesSplit("day1/input-1.txt") { it.isEmpty() }
     }
 }
