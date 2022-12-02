@@ -28,6 +28,6 @@ class CalorieCounter {
     }
 
     private fun splitListOnBlanks(): List<List<String>> {
-        return ResourceFiles.readLinesSplit("day1/input-1.txt") { it.isEmpty() }
+        return ResourceFiles.readLinesDivided("day1/input-1.txt") { it.isEmpty() }
     }
 }

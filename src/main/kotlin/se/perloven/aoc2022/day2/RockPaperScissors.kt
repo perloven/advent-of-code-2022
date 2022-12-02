@@ -36,26 +36,24 @@ class RockPaperScissors {
     }
 
     fun countRPSScore(): Int {
-        val lines = ResourceFiles.readLines("day2/input-1.txt")
+        val lines = ResourceFiles.readLinesSplit("day2/input-1.txt")
         return lines.sumOf { countSingleScore(it) }
     }
 
     fun countRPSScore2(): Int {
-        val lines = ResourceFiles.readLines("day2/input-1.txt")
+        val lines = ResourceFiles.readLinesSplit("day2/input-1.txt")
         return lines.sumOf { countSingleScoreDynamic(it) }
     }
 
-    private fun countSingleScore(line: String): Int {
-        val actions = line.split(" ")
-        val oppAction = decodeOppAction(actions[0])
-        val yourAction = decodeYourAction(actions[1])
+    private fun countSingleScore(lineParts: List<String>): Int {
+        val oppAction = decodeOppAction(lineParts[0])
+        val yourAction = decodeYourAction(lineParts[1])
         return yourAction.score + getOutcomeScore(yourAction = yourAction, oppAction = oppAction)
     }
 
-    private fun countSingleScoreDynamic(line: String): Int {
-        val actions = line.split(" ")
-        val oppAction = decodeOppAction(actions[0])
-        return countOutcome(oppAction, actions[1])
+    private fun countSingleScoreDynamic(lineParts: List<String>): Int {
+        val oppAction = decodeOppAction(lineParts[0])
+        return countOutcome(oppAction, lineParts[1])
     }
 
     private fun countOutcome(oppAction: Action, outcome: String): Int {
@@ -87,28 +85,12 @@ class RockPaperScissors {
     }
 
     private fun getOutcomeScore(yourAction: Action, oppAction: Action): Int {
-        if (yourAction == oppAction) {
-            return 3
-        }
-
-        return when (yourAction) {
-            ROCK -> return when (oppAction) {
-                PAPER -> 0
-                SCISSORS -> 6
-                else -> 0
-            }
-
-            PAPER -> return when (oppAction) {
-                ROCK -> 6
-                SCISSORS -> 0
-                else -> 0
-            }
-
-            SCISSORS -> return when (oppAction) {
-                ROCK -> 0
-                PAPER -> 6
-                else -> 0
-            }
+        return if (yourAction == oppAction) {
+            3
+        } else if (yourAction.getBeats() == oppAction) {
+            6
+        } else {
+            0
         }
     }
 }
