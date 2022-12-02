@@ -21,7 +21,7 @@ object ResourceFiles {
      * Read all lines from a file located in "resources",
      * and split them into multiple smaller lists according to some rule (provided by the caller).
      */
-    fun readLinesSplit(fileName: String, splitRule: (String) -> Boolean): List<List<String>> {
+    fun readLinesDivided(fileName: String, splitRule: (String) -> Boolean): List<List<String>> {
         val splitLists = mutableListOf<List<String>>()
 
         val lines = readLines(fileName)
@@ -36,5 +36,9 @@ object ResourceFiles {
         }
 
         return splitLists
+    }
+
+    fun readLinesSplit(fileName: String, delimiter: String = " "): List<List<String>> {
+        return readLines(fileName).map { it.split(delimiter) }
     }
 }
