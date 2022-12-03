@@ -3,11 +3,11 @@ package se.perloven.aoc2022.day3
 import se.perloven.aoc2022.util.ResourceFiles
 
 fun main() {
-    println("Part 1: ${Day3Placeholder.part1()}")
-    println("Part 2: ${Day3Placeholder.part2()}")
+    println("Part 1: ${RucksackReorganization.part1()}")
+    println("Part 2: ${RucksackReorganization.part2()}")
 }
 
-object Day3Placeholder {
+object RucksackReorganization {
 
     fun part1(): Int {
         val lines = ResourceFiles.readLines("day3/input-1.txt")
@@ -29,7 +29,6 @@ object Day3Placeholder {
 
     private fun findPriorityOfMatchingItem(line: String): Int {
         val (compartment1, compartment2) = divideRucksack(line)
-        //println("cmp1: $compartment1 cmp2: $compartment2")
         val matchingItem = findMatchingItem(compartment1, compartment2)
         return getPriority(matchingItem)
     }
