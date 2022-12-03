@@ -10,12 +10,12 @@ fun main() {
 object RucksackReorganization {
 
     fun part1(): Int {
-        val lines = ResourceFiles.readLines("day3/input-1.txt")
+        val lines = ResourceFiles.readLines(3)
         return lines.sumOf { findPriorityOfMatchingItem(it) }
     }
 
     fun part2(): Int {
-        val lines = ResourceFiles.readLines("day3/input-1.txt")
+        val lines = ResourceFiles.readLines(3)
         return lines.chunked(3)
             .sumOf { findBadgePriority(it) }
     }
