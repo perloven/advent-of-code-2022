@@ -12,11 +12,8 @@ object SupplyStacks {
 
     private data class Operation(val qty: Int, val source: Int, val dest: Int)
 
-    fun part1(): String {
-        val lines = ResourceFiles.readLines("day5/input-1.txt")
-        val operationLines = lines.drop(10)
-        val operations = operationLines.map { parseOperation(it) }
-        val stacks = listOf<Stack<String>>(
+    private fun initialStacks(): List<Stack<String>> {
+        return listOf(
             Stack<String>().apply {
                 addAll(listOf("M", "J", "C", "B", "F", "R", "L", "H"))
             },
@@ -45,9 +42,31 @@ object SupplyStacks {
                 addAll(listOf("C", "B", "G", "P", "F", "Q", "R", "J"))
             }
         )
+    }
 
+    private fun operations(): List<Operation> {
+        val lines = ResourceFiles.readLines("day5/input-1.txt")
+        val operationLines = lines.drop(10)
+        return operationLines.map { parseOperation(it) }
+    }
+
+    fun part1(): String {
+        val stacks = initialStacks()
+        val operations = operations()
         operations.forEach { op ->
-            if(op.qty == 1) {
+            repeat(op.qty) {
+                executeOperation(stacks, op)
+            }
+        }
+
+        return getTopCrateWord(stacks)
+    }
+
+    fun part2(): String {
+        val stacks = initialStacks()
+        val operations = operations()
+        operations.forEach { op ->
+            if (op.qty == 1) {
                 repeat(op.qty) {
                     executeOperation(stacks, op)
                 }
@@ -82,24 +101,12 @@ object SupplyStacks {
         repeat(operation.qty) {
             intermediateStack.push(srcStack.pop())
         }
-        while(!intermediateStack.isEmpty()) {
+        while (!intermediateStack.isEmpty()) {
             destStack.push(intermediateStack.pop())
         }
     }
 
     private fun getTopCrateWord(stacks: List<Stack<String>>): String {
-        return stacks.joinToString(separator = "") {
-            it.pop()
-//            if (!it.isEmpty()) {
-//                it.pop()
-//            } else {
-//                ""
-//            }
-        }
-    }
-
-    fun part2(): String {
-        val lines = ResourceFiles.readLines("day5/input-1.txt")
-        return "unsolved"
+        return stacks.joinToString(separator = "") { it.pop() }
     }
 }
