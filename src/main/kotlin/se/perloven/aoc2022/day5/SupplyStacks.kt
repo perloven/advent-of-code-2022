@@ -50,6 +50,15 @@ object SupplyStacks {
         return operationLines.map { parseOperation(it) }
     }
 
+    private fun parseOperation(line: String): Operation {
+        val parts = line.split(" ")
+        return Operation(
+            qty = parts[1].toInt(),
+            source = parts[3].toInt(),
+            dest = parts[5].toInt()
+        )
+    }
+
     fun part1(): String {
         val stacks = initialStacks()
         val operations = operations()
@@ -76,15 +85,6 @@ object SupplyStacks {
         }
 
         return getTopCrateWord(stacks)
-    }
-
-    private fun parseOperation(line: String): Operation {
-        val parts = line.split(" ")
-        return Operation(
-            qty = parts[1].toInt(),
-            source = parts[3].toInt(),
-            dest = parts[5].toInt()
-        )
     }
 
     private fun executeOperation(stacks: List<Stack<String>>, operation: Operation) {
