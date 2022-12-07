@@ -69,7 +69,7 @@ object NoSpaceLeftOnDevice {
         println(commands)
         val rootFile = parseFiles(commands)
         println(rootFile)
-        return calculateTotalSize(rootFile)
+        return calculateTotalSize(rootFile, 0)
     }
 
     private fun parseCommands(): List<Command> {
@@ -127,13 +127,13 @@ object NoSpaceLeftOnDevice {
         return rootFile
     }
 
-    private fun calculateTotalSize(rootFile: File): Int {
+    private fun calculateTotalSize(rootFile: File, cleanupNeeded: Int): Int {
         val files = mutableListOf(rootFile)
         addFiles(files, rootFile)
         return files
             .filter { it.isDirectory() }
-            .filter { it.totalSize() <= 100_000 }
-            .sumOf { it.totalSize() }
+            .filter { it.totalSize() > cleanupNeeded }
+            .minByOrNull { it.totalSize() }!!.totalSize()
     }
 
     private fun addFiles(files: MutableList<File>, currentFile: File) {
@@ -154,6 +154,13 @@ object NoSpaceLeftOnDevice {
      */
 
     fun part2(): Int {
-        return -1
+        val commands = parseCommands()
+        println(commands)
+        val rootFile = parseFiles(commands)
+        println(rootFile)
+        val totalSize = rootFile.subfiles.sumOf { it.totalSize() }
+        val freespace = 70_000_000 - totalSize
+        val cleanupNeeded = 30_000_000 - freespace
+        return calculateTotalSize(rootFile, cleanupNeeded)
     }
 }
