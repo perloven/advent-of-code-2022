@@ -1,6 +1,8 @@
 package se.perloven.aoc2022.day8
 
 import se.perloven.aoc2022.util.ResourceFiles
+import kotlin.math.max
+import kotlin.math.min
 
 fun main() {
     println("Part 1: ${TreetopTreeHouse.part1()}")
@@ -12,26 +14,19 @@ object TreetopTreeHouse {
     private data class Tree(val height: Int, var visible: Boolean = false)
 
     fun part1(): Int {
-        return parseTreeGrid()
+        val treeGrid = parseTreeGrid()
+        markVisibility(treeGrid)
+        return countVisibleTrees(treeGrid)
     }
 
-    private fun parseTreeGrid(): Int {
+    private fun parseTreeGrid(): List<List<Tree>> {
         val lines = ResourceFiles.readLines("day8/input-1.txt").map { line -> line.toList().map { it.digitToInt() } }
-        val treeGrid = lines.map { line -> line.map { Tree(it, visible = false) } }
-        println(lines)
-        markVisibility(treeGrid)
-
-        return countVisibleTrees(treeGrid)
+        return lines.map { line -> line.map { Tree(it, visible = false) } }
     }
 
     private fun markVisibility(treeGrid: List<List<Tree>>) {
         val width = treeGrid[0].size - 1
         val height = treeGrid.size - 1
-        val searchPatterns: List<Pair<IntProgression, IntProgression>> =
-            listOf(
-                Pair(0..height, 0..width),
-                Pair(height downTo 0, 0..width),
-            )
         markVertical(treeGrid, 0..height, 0..width)
         markVertical(treeGrid, height downTo 0, 0..width)
         markHorizontal(treeGrid, 0..height, 0..width)
@@ -69,6 +64,56 @@ object TreetopTreeHouse {
     }
 
     fun part2(): Int {
-        return -1
+        val treeGrid = parseTreeGrid()
+        var max = 0
+        for (y in treeGrid.indices) {
+            for (x in treeGrid[y].indices) {
+                val scenicScore = calculateScenicScore(treeGrid, x, y)
+                if (scenicScore > max) {
+                    max = scenicScore
+                }
+            }
+        }
+
+        return max
+    }
+
+    private fun calculateScenicScore(treeGrid: List<List<Tree>>, x: Int, y: Int): Int {
+        val height = treeGrid.size - 1
+        val width = treeGrid[0].size - 1
+        val tree = treeGrid[x][y]
+        val leftScore = calculateHorizontalScore(treeGrid, tree.height, max(0, x - 1) downTo 0, y)
+        val rightScore = calculateHorizontalScore(treeGrid, tree.height, min(width, x + 1)..width, y)
+        val upScore = calculateVerticalScore(treeGrid, tree.height, x, max(0, y - 1) downTo 0)
+        val downScore = calculateVerticalScore(treeGrid, tree.height, x, min(height, y + 1)..height)
+        return leftScore * rightScore * upScore * downScore
+    }
+
+    private fun calculateVerticalScore(treeGrid: List<List<Tree>>, maxHeight: Int, x: Int, ys: IntProgression): Int {
+        var trees = 0
+        for (y in ys) {
+            trees++
+            val testTree = treeGrid[x][y]
+
+            if (testTree.height >= maxHeight) {
+                return trees
+            }
+        }
+
+        return trees
+    }
+
+    private fun calculateHorizontalScore(treeGrid: List<List<Tree>>, maxHeight: Int, xs: IntProgression, y: Int): Int {
+        var trees = 0
+        for (x in xs) {
+            trees++
+            val testTree = treeGrid[x][y]
+
+            if (testTree.height >= maxHeight) {
+                return trees
+            }
+        }
+
+        return trees
     }
 }
