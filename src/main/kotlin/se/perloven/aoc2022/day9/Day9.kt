@@ -19,7 +19,12 @@ object Day9 {
 
     private data class Position(val x: Int, val y: Int)
 
-    private data class Piece(var pos: Position, val visited: MutableSet<Position>) {
+    private data class Piece(
+        var pos: Position,
+        val visited: MutableSet<Position>,
+        var trailing: Piece? = null,
+        val id: Int = 0
+    ) {
         fun move(newPos: Position) {
             this.pos = newPos
             visited.add(newPos)
@@ -47,7 +52,7 @@ object Day9 {
             repeat(op.steps) {
                 updatePiece(head, op.dir)
                 if (!isJoined(head, tail)) {
-                    updateTail(tail, head.pos, op.dir)
+                    updateTail(tail, head.pos)
                 }
             }
         }
@@ -70,17 +75,90 @@ object Day9 {
         return abs(head.pos.x - tail.pos.x) <= 1 && abs(head.pos.y - tail.pos.y) <= 1
     }
 
-    private fun updateTail(tail: Piece, headPos: Position, headDir: Direction) {
-        val newTailPos = when (headDir) {
-            L -> Position(headPos.x + 1, headPos.y)
-            R -> Position(headPos.x - 1, headPos.y)
-            U -> Position(headPos.x, headPos.y + 1)
-            D -> Position(headPos.x, headPos.y - 1)
-        }
+    private fun updateTail(tail: Piece, headPos: Position) {
+        val tailPos = tail.pos
+        val shouldSameX = abs(tailPos.x - headPos.x) >= 2
+        val shouldSameY = abs(tailPos.y - headPos.y) >= 2
+        val shouldMoveDiagonally = shouldSameX && shouldSameY
+        val newTailPos: Position =
+            if (shouldMoveDiagonally) {
+                if (tailPos.x < headPos.x) {
+                    if (tailPos.y < headPos.y) {
+                        Position(headPos.x - 1, headPos.y - 1)
+                    } else {
+                        Position(headPos.x - 1, headPos.y + 1)
+                    }
+                } else {
+                    if (tailPos.y < headPos.y) {
+                        Position(headPos.x + 1, headPos.y - 1)
+                    } else {
+                        Position(headPos.x + 1, headPos.y + 1)
+                    }
+                }
+            } else if (shouldSameX) {
+                if (tailPos.x < headPos.x) {
+                    Position(headPos.x - 1, headPos.y)
+                } else {
+                    Position(headPos.x + 1, headPos.y)
+                }
+            } else if (shouldSameY) {
+                if (tailPos.y < headPos.y) {
+                    Position(headPos.x, headPos.y - 1)
+                } else {
+                    Position(headPos.x, headPos.y + 1)
+                }
+            } else {
+                throw IllegalStateException("Illegal move - tail $tail, headPos $headPos")
+            }
         tail.move(newTailPos)
     }
 
     fun part2(): Int {
-        return -1
+        val operations = ResourceFiles.readLinesSplit("day9/input-1.txt").map { parseOperation(it) }
+        val tail = runSimulationTen(operations)
+        println("Tail id ${tail.id}")
+        return tail.visited.size
+    }
+
+    private fun runSimulationTen(operations: List<Operation>): Piece {
+        val head = initTenPieces()
+        operations.forEach { op ->
+            repeat(op.steps) {
+
+                updatePiece(head, op.dir)
+                var curHead = head
+                var curTail = head.trailing
+                while (curTail != null) {
+                    if (!isJoined(curHead, curTail)) {
+                        updateTail(curTail, curHead.pos)
+                    }
+                    curHead = curTail
+                    curTail = curTail.trailing
+                }
+            }
+        }
+
+
+        return findTail(head)
+    }
+
+    private fun initTenPieces(): Piece {
+        val initialPos = Position(0, 0)
+        val head = Piece(initialPos, mutableSetOf(initialPos), id = 1)
+        var piece = head
+        for (i in 2..10) {
+            val nextPiece = Piece(initialPos, mutableSetOf(initialPos), id = i)
+            piece.trailing = nextPiece
+            piece = nextPiece
+        }
+        return head
+    }
+
+    private fun findTail(head: Piece): Piece {
+        var cur: Piece = head
+        while (cur.trailing != null) {
+            cur = cur.trailing!!
+        }
+        return cur
     }
 }
