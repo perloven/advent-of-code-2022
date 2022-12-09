@@ -20,7 +20,7 @@ object TreetopTreeHouse {
     }
 
     private fun parseTreeGrid(): List<List<Tree>> {
-        val lines = ResourceFiles.readLines("day8/input-1.txt").map { line -> line.toList().map { it.digitToInt() } }
+        val lines = ResourceFiles.readLines(8).map { line -> line.toList().map { it.digitToInt() } }
         return lines.map { line -> line.map { Tree(it, visible = false) } }
     }
 
