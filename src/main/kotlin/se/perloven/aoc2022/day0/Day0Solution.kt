@@ -9,7 +9,7 @@ fun main() {
 class SampleSolution {
 
     fun solve() {
-        val lines = ResourceFiles.readLines("day0/day0-sample.txt")
+        val lines = ResourceFiles.readLines(0)
         val linesContainingLineNumber = lines.count { it.startsWith("line") }
         println("Day 0 solution: $linesContainingLineNumber lines start with \"line\"")
     }

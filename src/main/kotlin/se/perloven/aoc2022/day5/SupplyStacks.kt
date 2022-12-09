@@ -45,7 +45,7 @@ object SupplyStacks {
     }
 
     private fun operations(): List<Operation> {
-        val lines = ResourceFiles.readLines("day5/input-1.txt")
+        val lines = ResourceFiles.readLines(5)
         val operationLines = lines.drop(10)
         return operationLines.map { parseOperation(it) }
     }

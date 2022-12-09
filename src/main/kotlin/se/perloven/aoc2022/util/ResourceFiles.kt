@@ -5,14 +5,15 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 
 object ResourceFiles {
-    private val basePath = Path.of("src", "main", "resources")
+    private val inputBasePath = Path.of("src", "main", "resources", "input")
 
     /**
      * Read all lines from a file located in "resources".
      * Each line corresponds to one element in the resulting list.
      */
-    fun readLines(fileName: String): List<String> {
-        val path = basePath.resolve(fileName)
+    fun readLines(day: Int): List<String> {
+        val fileName = "day$day.txt"
+        val path = inputBasePath.resolve(fileName)
         require(path.exists()) { "Resource file $fileName does not exist"}
         return Files.lines(path).toList()
     }
@@ -21,10 +22,10 @@ object ResourceFiles {
      * Read all lines from a file located in "resources",
      * and split them into multiple smaller lists according to some rule (provided by the caller).
      */
-    fun readLinesDivided(fileName: String, splitRule: (String) -> Boolean): List<List<String>> {
+    fun readLinesDivided(day: Int, splitRule: (String) -> Boolean): List<List<String>> {
         val splitLists = mutableListOf<List<String>>()
 
-        val lines = readLines(fileName)
+        val lines = readLines(day)
         var currentList = mutableListOf<String>()
         lines.forEach {
             if (splitRule(it)) {
@@ -38,7 +39,7 @@ object ResourceFiles {
         return splitLists
     }
 
-    fun readLinesSplit(fileName: String, delimiter: String = " "): List<List<String>> {
-        return readLines(fileName).map { it.split(delimiter) }
+    fun readLinesSplit(day: Int, delimiter: String = " "): List<List<String>> {
+        return readLines(day).map { it.split(delimiter) }
     }
 }
