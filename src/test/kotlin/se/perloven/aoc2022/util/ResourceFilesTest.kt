@@ -8,7 +8,7 @@ internal class ResourceFilesTest {
 
     @Test
     fun readSampleFileLines() {
-        val lines: List<String> = ResourceFiles.readLines("util/sample-resource-file.txt")
+        val lines: List<String> = ResourceFiles.readLines(999)
 
         assertEquals(5, lines.size)
     }
@@ -16,7 +16,7 @@ internal class ResourceFilesTest {
     @Test
     fun `Read non-existent file`() {
         assertThrows<IllegalArgumentException> {
-            ResourceFiles.readLines("NonExistentFile.zip")
+            ResourceFiles.readLines(35)
         }
     }
 }
