@@ -66,14 +66,14 @@ object NoSpaceLeftOnDevice {
 
     fun part1(): Int {
         val commands = parseCommands()
-        println(commands)
+        //println(commands)
         val rootFile = parseFiles(commands)
-        println(rootFile)
-        return calculateTotalSize(rootFile, 0)
+        //println(rootFile)
+        return calculateTotalSizePart1(rootFile, 0)
     }
 
     private fun parseCommands(): List<Command> {
-        val lines = ResourceFiles.readLinesSplit("day7/input-1.txt")
+        val lines = ResourceFiles.readLinesSplit(7)
         val commands = mutableListOf<Command>()
         for (i in lines.indices) {
             val line = lines[i]
@@ -127,7 +127,16 @@ object NoSpaceLeftOnDevice {
         return rootFile
     }
 
-    private fun calculateTotalSize(rootFile: File, cleanupNeeded: Int): Int {
+    private fun calculateTotalSizePart1(rootFile: File, cleanupNeeded: Int): Int {
+        val files = mutableListOf(rootFile)
+        addFiles(files, rootFile)
+        return files
+            .filter { it.isDirectory() }
+            .filter { it.totalSize() <= 100_000 }
+            .sumOf { it.totalSize() }
+    }
+
+    private fun calculateTotalSizePart2(rootFile: File, cleanupNeeded: Int): Int {
         val files = mutableListOf(rootFile)
         addFiles(files, rootFile)
         return files
@@ -155,12 +164,12 @@ object NoSpaceLeftOnDevice {
 
     fun part2(): Int {
         val commands = parseCommands()
-        println(commands)
+        //println(commands)
         val rootFile = parseFiles(commands)
-        println(rootFile)
+        //println(rootFile)
         val totalSize = rootFile.subfiles.sumOf { it.totalSize() }
         val freespace = 70_000_000 - totalSize
         val cleanupNeeded = 30_000_000 - freespace
-        return calculateTotalSize(rootFile, cleanupNeeded)
+        return calculateTotalSizePart2(rootFile, cleanupNeeded)
     }
 }
