@@ -1,15 +1,15 @@
 package se.perloven.aoc2022.day9
 
-import se.perloven.aoc2022.day9.Day9.Direction.*
+import se.perloven.aoc2022.day9.RopeBridge.Direction.*
 import se.perloven.aoc2022.util.ResourceFiles
 import kotlin.math.abs
 
 fun main() {
-    println("Part 1: ${Day9.part1()}")
-    println("Part 2: ${Day9.part2()}")
+    println("Part 1: ${RopeBridge.part1()}")
+    println("Part 2: ${RopeBridge.part2()}")
 }
 
-object Day9 {
+object RopeBridge {
 
     private enum class Direction {
         L, R, U, D
@@ -32,7 +32,7 @@ object Day9 {
     }
 
     fun part1(): Int {
-        val operations = ResourceFiles.readLinesSplit("day9/input-1.txt").map { parseOperation(it) }
+        val operations = ResourceFiles.readLinesSplit(9).map { parseOperation(it) }
         val tail = runSimulation(operations)
         return tail.visited.size
     }
@@ -114,9 +114,8 @@ object Day9 {
     }
 
     fun part2(): Int {
-        val operations = ResourceFiles.readLinesSplit("day9/input-1.txt").map { parseOperation(it) }
+        val operations = ResourceFiles.readLinesSplit(9).map { parseOperation(it) }
         val tail = runSimulationTen(operations)
-        println("Tail id ${tail.id}")
         return tail.visited.size
     }
 
