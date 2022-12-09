@@ -36,12 +36,12 @@ class RockPaperScissors {
     }
 
     fun countRPSScore(): Int {
-        val lines = ResourceFiles.readLinesSplit("day2/input-1.txt")
+        val lines = ResourceFiles.readLinesSplit(2)
         return lines.sumOf { countSingleScore(it) }
     }
 
     fun countRPSScore2(): Int {
-        val lines = ResourceFiles.readLinesSplit("day2/input-1.txt")
+        val lines = ResourceFiles.readLinesSplit(2)
         return lines.sumOf { countSingleScoreDynamic(it) }
     }
 

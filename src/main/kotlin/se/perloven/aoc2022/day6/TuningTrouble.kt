@@ -19,7 +19,7 @@ object TuningTrouble {
     }
 
     private fun findUniqueSequence(seqLength: Int): Int {
-        val input = ResourceFiles.readLines("day6/input-1.txt")[0].toList()
+        val input = ResourceFiles.readLines(6)[0].toList()
         for (i in (seqLength - 1)..input.size) {
             val set = mutableSetOf<Char>()
             repeat(seqLength) {
