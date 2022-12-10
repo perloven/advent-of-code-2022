@@ -11,12 +11,9 @@ fun main() {
 
 object CathodeRayTube {
 
-    private enum class Operation {
-        NOOP,
-        ADDX
-    }
-
-    private data class Instruction(val op: Operation, val value: Int? = null)
+    private sealed interface Instruction
+    private object NoopInstruction : Instruction
+    private class AddInstruction(val value: Int) : Instruction
 
     private data class ProcessingInstruction(val value: Int, var remainingCycles: Int)
 
@@ -27,15 +24,14 @@ object CathodeRayTube {
     }
 
     private fun parseInstructions(lines: List<List<String>>): List<Instruction> {
-        return lines.map { parseOperation(it) }
+        return lines.map { parseInstruction(it) }
     }
 
-    private fun parseOperation(line: List<String>) : Instruction {
-        val op = line[0]
-        return if (op == "noop") {
-            Instruction(Operation.NOOP)
-        } else {
-            Instruction(Operation.ADDX, value = line[1].toInt())
+    private fun parseInstruction(line: List<String>) : Instruction {
+        return when (val op = line[0]) {
+            "noop" -> NoopInstruction
+            "addx" -> AddInstruction(value = line[1].toInt())
+            else -> throw IllegalArgumentException("Unrecognized instruction $op")
         }
     }
 
@@ -51,17 +47,15 @@ object CathodeRayTube {
         var processingInstruction: ProcessingInstruction
         while (instructionStack.isNotEmpty()) {
             val instruction = instructionStack.pop()
-            processingInstruction = if (instruction.op == Operation.NOOP) {
-                ProcessingInstruction(0, 1)
-            } else {
-                ProcessingInstruction(instruction.value!!, 2)
+            processingInstruction = when (instruction) {
+                is NoopInstruction -> ProcessingInstruction(0, 1)
+                is AddInstruction -> ProcessingInstruction(instruction.value, 2)
             }
 
             while (processingInstruction.remainingCycles-- > 0) {
 
                 if (cycle in relevantCycles) {
                     sumOfSignalStrengths += cycle * registerValue
-                    //println("Cycle $cycle, registerValue $registerValue, sumOfStrengths $sumOfSignalStrengths")
                 }
                 cycle++
             }
@@ -88,19 +82,16 @@ object CathodeRayTube {
         var cycle = 0
         var registerValue = 1
         var processingInstruction: ProcessingInstruction
-        var x = 0
-        var y = 0
         while (instructionStack.isNotEmpty()) {
             val instruction = instructionStack.pop()
-            processingInstruction = if (instruction.op == Operation.NOOP) {
-                ProcessingInstruction(0, 1)
-            } else {
-                ProcessingInstruction(instruction.value!!, 2)
+            processingInstruction = when (instruction) {
+                is NoopInstruction -> ProcessingInstruction(0, 1)
+                is AddInstruction -> ProcessingInstruction(instruction.value, 2)
             }
 
             while (processingInstruction.remainingCycles-- > 0) {
-                x = cycle % 40
-                y = cycle / 40
+                val x = cycle % 40
+                val y = cycle / 40
                 val shouldDraw = abs(registerValue - x) < 2
                 if (shouldDraw) {
                     drawnImage[y][x] = "#"
