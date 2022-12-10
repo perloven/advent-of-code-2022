@@ -2,6 +2,7 @@ package se.perloven.aoc2022.day10
 
 import se.perloven.aoc2022.util.ResourceFiles
 import java.util.*
+import kotlin.math.abs
 
 fun main() {
     println("Part 1: ${Day10.part1()}")
@@ -56,8 +57,7 @@ object Day10 {
                 ProcessingInstruction(instruction.value!!, 2)
             }
 
-            while (processingInstruction.remainingCycles > 0) {
-                processingInstruction.remainingCycles--
+            while (processingInstruction.remainingCycles-- > 0) {
 
                 if (cycle in relevantCycles) {
                     sumOfSignalStrengths += cycle * registerValue
@@ -71,7 +71,47 @@ object Day10 {
         return sumOfSignalStrengths
     }
 
-    fun part2(): Int {
-        return -1
+    fun part2() {
+        val lines = ResourceFiles.readLinesSplit(10)
+        val instructions = parseInstructions(lines)
+        val drawnImage = drawImage(instructions)
+        drawnImage.forEach {
+            println(it.joinToString(separator = ""))
+        }
+    }
+
+
+    private fun drawImage(instructions: List<Instruction>): Array<Array<String>> {
+        val drawnImage: Array<Array<String>> = Array(6) { Array(40) { "." } }
+        val instructionStack: Stack<Instruction> = Stack<Instruction>().apply {
+            instructions.reversed().forEach { push(it) }
+        }
+
+        var cycle = 0
+        var registerValue = 1
+        var processingInstruction: ProcessingInstruction
+        var x = 0
+        var y = 0
+        while (instructionStack.isNotEmpty()) {
+            val instruction = instructionStack.pop()
+            processingInstruction = if (instruction.op == Operation.NOOP) {
+                ProcessingInstruction(0, 1)
+            } else {
+                ProcessingInstruction(instruction.value!!, 2)
+            }
+
+            while (processingInstruction.remainingCycles-- > 0) {
+                x = cycle % 40
+                y = cycle / 40
+                val shouldDraw = abs(registerValue - x) < 2
+                if (shouldDraw) {
+                    drawnImage[y][x] = "#"
+                }
+                cycle++
+            }
+            registerValue += processingInstruction.value
+        }
+
+        return drawnImage
     }
 }
