@@ -5,11 +5,11 @@ import java.util.*
 import kotlin.math.abs
 
 fun main() {
-    println("Part 1: ${Day10.part1()}")
-    println("Part 2: ${Day10.part2()}")
+    println("Part 1: ${CathodeRayTube.part1()}")
+    println("Part 2: ${CathodeRayTube.part2()}")
 }
 
-object Day10 {
+object CathodeRayTube {
 
     private enum class Operation {
         NOOP,
@@ -71,13 +71,11 @@ object Day10 {
         return sumOfSignalStrengths
     }
 
-    fun part2() {
+    fun part2(): String {
         val lines = ResourceFiles.readLinesSplit(10)
         val instructions = parseInstructions(lines)
         val drawnImage = drawImage(instructions)
-        drawnImage.forEach {
-            println(it.joinToString(separator = ""))
-        }
+        return drawnImage.joinToString(prefix = "\n", separator = "\n") { it.joinToString(separator = "") }
     }
 
 
