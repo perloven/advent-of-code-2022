@@ -17,7 +17,7 @@ object MonkeyInTheMiddle {
         fun inspect(): List<ThrownItem> {
             val itemsToThrow = items.toList()
             inspections = inspections.add(BigInteger.valueOf(items.size.toLong()))
-            items.forEach { it.worryLevel = operation(it.worryLevel) }
+            items.forEach { it.worryLevel = operation(it.worryLevel).rem(BigInteger.valueOf(9699690)) }
             items.clear()
             return itemsToThrow.map { ThrownItem(target = decideTarget(it), item = it) }
         }
