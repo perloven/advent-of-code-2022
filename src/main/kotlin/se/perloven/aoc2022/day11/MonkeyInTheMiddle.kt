@@ -2,8 +2,6 @@ package se.perloven.aoc2022.day11
 
 import se.perloven.aoc2022.util.ResourceFiles
 import java.math.BigInteger
-import java.time.Duration
-import java.time.Instant
 
 fun main() {
     println("Part 1: ${MonkeyInTheMiddle.part1()}")
@@ -14,12 +12,20 @@ object MonkeyInTheMiddle {
 
     private data class Monkey(val id: Int, val operation: (BigInteger) -> BigInteger, val testDenominator: Int, val trueTarget: Int,
                               val falseTarget: Int, val items: MutableList<Item>, var inspections: BigInteger = BigInteger.ZERO) {
-        fun inspect(): List<ThrownItem> {
+        fun inspect(part: Int): List<ThrownItem> {
             val itemsToThrow = items.toList()
             inspections = inspections.add(BigInteger.valueOf(items.size.toLong()))
-            items.forEach { it.worryLevel = operation(it.worryLevel).rem(BigInteger.valueOf(9699690)) }
+            items.forEach { it.worryLevel = reduceWorryLevel(part, operation(it.worryLevel)) }
             items.clear()
             return itemsToThrow.map { ThrownItem(target = decideTarget(it), item = it) }
+        }
+
+        private fun reduceWorryLevel(part: Int, worryLevel: BigInteger): BigInteger {
+            return when(part) {
+                1 -> worryLevel.div(BigInteger.valueOf(3))
+                2 -> worryLevel.rem(BigInteger.valueOf(9699690))
+                else -> throw IllegalArgumentException("Illegal part $part")
+            }
         }
 
         private fun decideTarget(item: Item): Int {
@@ -39,10 +45,10 @@ object MonkeyInTheMiddle {
 
     private data class ThrownItem(val target: Int, val item: Item)
 
-    fun part1(): String {
+    fun part1(): Int {
         val monkeys = parseMonkeys()
-        doMonkeyBusiness(monkeys)
-        return calculateLevelOfMonkeyBusiness(monkeys).toString()
+        doMonkeyBusiness(monkeys, 1)
+        return calculateLevelOfMonkeyBusiness(monkeys).toInt()
     }
 
     private fun parseMonkeys(): List<Monkey> {
@@ -76,13 +82,7 @@ object MonkeyInTheMiddle {
             1 -> { old -> old.multiply(BigInteger.valueOf(17)) }
             2 -> { old -> old.add(BigInteger.valueOf(1)) }
             3 -> { old -> old.add(BigInteger.valueOf(2)) }
-            4 -> { old ->
-                val start = Instant.now()
-                val result = old.pow(2)
-                val powDuration = Duration.between(start, Instant.now())
-                println("pow duration: ${powDuration.toMillis()}, result: $result")
-                result
-            }
+            4 -> { old -> old.pow(2) }
             5 -> { old -> old.add(BigInteger.valueOf(8)) }
             6 -> { old -> old.add(BigInteger.valueOf(6)) }
             7 -> { old -> old.add(BigInteger.valueOf(7)) }
@@ -90,12 +90,15 @@ object MonkeyInTheMiddle {
         }
     }
 
-    private fun doMonkeyBusiness(monkeys: List<Monkey>) {
-        repeat(10_000) { i ->
-            println(i)
+    private fun doMonkeyBusiness(monkeys: List<Monkey>, part: Int) {
+        val rounds = when(part) {
+            1 -> 20
+            2 -> 10_000
+            else -> 0
+        }
+        repeat(rounds) { i ->
             for (monkey in monkeys) {
-                println("monkey ${monkey.id}")
-                val itemsToThrow = monkey.inspect()
+                val itemsToThrow = monkey.inspect(part)
                 itemsToThrow.forEach { thrownItem ->
                     val targetMonkey = monkeys[thrownItem.target]
                     targetMonkey.receiveThrownItem(thrownItem.item)
@@ -111,7 +114,9 @@ object MonkeyInTheMiddle {
             .reduce { acc: BigInteger, i: BigInteger -> acc.multiply(i) }
     }
 
-    fun part2(): Int {
-        return -1
+    fun part2(): BigInteger {
+        val monkeys = parseMonkeys()
+        doMonkeyBusiness(monkeys, 2)
+        return calculateLevelOfMonkeyBusiness(monkeys)
     }
 }
