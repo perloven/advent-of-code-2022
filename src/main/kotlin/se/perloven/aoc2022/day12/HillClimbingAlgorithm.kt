@@ -21,13 +21,9 @@ object HillClimbingAlgorithm {
     }
 
     fun part1(): Int {
-        val lines = ResourceFiles.readLines(12)
-        val grid = parseElevations(lines)
-        connectGridNodes(grid)
-        val startNode = grid[20][0]
-        //println("Start node: $startNode")
-        //startNode.adjacent.forEach { println("adjacent node: $it") }
-        val targetNode = traceShortestPath(startNode)
+        val graph = createGraph()
+        val sNode = graph[20][0]
+        val targetNode = traceShortestPath(sNode)
         return countShortestPath(targetNode!!)
     }
 
@@ -112,8 +108,8 @@ object HillClimbingAlgorithm {
     }
 
     private fun countShortestPath(targetNode: Node): Int {
-        var count = -1
-        var curNode: Node? = targetNode
+        var count = 0
+        var curNode: Node? = targetNode.parent
         while (curNode != null) {
             curNode = curNode.parent
             count++
@@ -125,20 +121,13 @@ object HillClimbingAlgorithm {
     fun part2(): Int {
         val graph = createGraph()
         val startNodes = findAllA(graph)
-        //println("${startNodes.size} A's")
         return startNodes.minOf { calcShortestPathToTarget(graph, it) }
-        //println("Start node: $startNode")
-        //startNode.adjacent.forEach { println("adjacent node: $it") }
     }
 
     private fun calcShortestPathToTarget(graph: Array<Array<Node>>, startNode: Node): Int {
         clearVisited(graph)
-        //println("From ${startNode.pos}")
         val targetNode = traceShortestPath(startNode)
-        //println("Found $targetNode")
-        val steps = targetNode?.let { countShortestPath(it) } ?: Int.MAX_VALUE
-        //println("Steps: $steps")
-        return steps
+        return targetNode?.let { countShortestPath(it) } ?: Int.MAX_VALUE
     }
 
     private fun findAllA(graph: Array<Array<Node>>): List<Node> {
