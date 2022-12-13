@@ -15,15 +15,7 @@ object DistressSignal {
         override fun compareTo(other: Expression): Int {
             return when (other) {
                 is Value -> this.value.compareTo(other.value)
-                is ValueList -> compareToList(other)
-            }
-        }
-
-        private fun compareToList(list: ValueList): Int {
-            return if (list.list.isEmpty()) {
-                1
-            } else {
-                compareTo(list.list.first())
+                is ValueList -> ValueList(values = listOf(this)).compareTo(other)
             }
         }
 
@@ -32,7 +24,7 @@ object DistressSignal {
         }
     }
 
-    private data class ValueList(val list: List<Expression>) : Expression {
+    private data class ValueList(val values: List<Expression>) : Expression {
         override fun compareTo(other: Expression): Int {
             return when (other) {
                 is Value -> other.compareTo(this) * -1
@@ -41,31 +33,59 @@ object DistressSignal {
         }
 
         private fun compareLists(first: ValueList, second: ValueList): Int {
-            if (first.list.isEmpty() && second.list.isEmpty()) {
+            if (first.values == second.values) {
                 return 0
-            } else if (first.list.isEmpty()) {
+            }
+            if (first.values.isEmpty()) {
                 return -1
-            } else if (second.list.isEmpty()) {
+            } else if (second.values.isEmpty()) {
                 return 1
             }
 
-            val firstValue = first.list.first()
-            val secondValue = second.list.first()
-            val compare = firstValue.compareTo(secondValue)
-            if (compare == 0) {
-                return compareLists(ValueList(first.list.drop(1)), ValueList(second.list.drop(1)))
+            val mutableFirst = first.values.toMutableList()
+            val mutableSecond = second.values.toMutableList()
+            do {
+                val left = mutableFirst.removeFirst()
+                val right = mutableSecond.removeFirst()
+                val comparison = left.compareTo(right)
+                if (comparison != 0) {
+                    return comparison
+                }
+            } while (mutableFirst.isNotEmpty() && mutableSecond.isNotEmpty())
+
+            return if (mutableFirst.isEmpty()) {
+                -1
+            } else {
+                1
+            }
+            /*
+            if (first.values.isEmpty() && second.values.isEmpty()) {
+                return 0
+            } else if (first.values.isEmpty()) {
+                return -1
+            } else if (second.values.isEmpty()) {
+                return 1
             }
 
-            //println("$compare : $first < $second")
-            return compare
+            val firstValue = first.values.first()
+            val secondValue = second.values.first()
+            val compare = firstValue.compareTo(secondValue)
+            if (compare != 0) {
+                return compare
+            }
+
+            return compareLists(ValueList(first.values.drop(1)), ValueList(second.values.drop(1)))
+
+             */
         }
 
         override fun toString(): String {
-            return list.joinToString(separator = ",", prefix = "[", postfix = "]")
+            return values.joinToString(separator = ",", prefix = "[", postfix = "]")
         }
     }
 
     // 6097 is not the right answer
+    // 6334 is not the right answer
     fun part1(): Int {
         val pairs: List<Pair<Expression, Expression>> = loadExpressions()
         printSerializedExpressions(pairs)
@@ -108,11 +128,11 @@ object DistressSignal {
     private fun parseExpression(line: String): Expression {
         val tokens = parseTokens(line.toList())
         printTokens(tokens)
-        return ValueList(list = parseListValues(tokens.drop(1).dropLast(1)))
+        return ValueList(values = parseListValues(tokens.drop(1).dropLast(1)))
     }
 
     private fun printTokens(tokens: List<Token>) {
-        println(tokens.joinToString(separator = " "))
+        //println(tokens.joinToString(separator = " "))
     }
 
     // tokens: [ ] , number
@@ -148,7 +168,7 @@ object DistressSignal {
                 listValues.add(Value(token.value))
             } else if (token is ListOpen) {
                 val nestedExpressions = parseListValues(closeList(tokens.drop(i + 1)))
-                listValues.add(ValueList(list = nestedExpressions))
+                listValues.add(ValueList(values = nestedExpressions))
             } else if (token is ListClose) {
                 continue
             }
@@ -183,18 +203,18 @@ object DistressSignal {
                 sum += index
             }
         }
-        println("Total comparisons: ${comparisonResults.size}")
-        println("Ordered indexes: $indexes")
+        //println("Total comparisons: ${comparisonResults.size}")
+        //println("Ordered indexes: $indexes")
 
         return sum
     }
 
     private fun printSerializedExpressions(pairs: List<Pair<Expression, Expression>>) {
-        pairs.forEach {
+        /*pairs.forEach {
             println(it.first)
             println(it.second)
             println()
-        }
+        }*/
     }
 
     fun part2(): Int {
