@@ -38,6 +38,7 @@ object DistressSignal {
         }
 
         private fun compareLists(first: ValueList, second: ValueList): Int {
+            //println("Comparing - $first ?= $second")
             if (first.list.isEmpty() && second.list.isEmpty()) {
                 return 0
             } else if (first.list.isEmpty()) {
@@ -47,18 +48,23 @@ object DistressSignal {
             }
 
             val firstValue = first.list.first()
-            val secondValue = first.list.first()
+            val secondValue = second.list.first()
+            //println("Comparing - $firstValue ?= $secondValue")
             val compare = firstValue.compareTo(secondValue)
             if (compare == 0) {
+                //println("$firstValue == $secondValue")
                 return compareLists(ValueList(first.list.drop(1)), ValueList(second.list.drop(1)))
             }
 
+            //println("$compare : $first < $second")
             return compare
         }
     }
 
     fun part1(): Int {
         val pairs: List<Pair<Expression, Expression>> = loadExpressions()
+        println(pairs[0].first)
+        println(pairs[0].second)
         val comparisons = pairs.map { it.first.compareTo(it.second) }
         return countSumOfOrderedPairs(comparisons)
     }
