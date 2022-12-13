@@ -13,6 +13,6 @@ class DistressSignalTest {
 
     @Test
     fun part2() {
-        assertEquals(-1, DistressSignal.part2())
+        assertEquals(21922, DistressSignal.part2())
     }
 }

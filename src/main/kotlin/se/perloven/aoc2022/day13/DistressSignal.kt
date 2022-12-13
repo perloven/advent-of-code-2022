@@ -218,6 +218,19 @@ object DistressSignal {
     }
 
     fun part2(): Int {
-        return -1
+        val divider1 = ValueList(listOf(Value(2)))
+        val divider2 = ValueList(listOf(Value(6)))
+        val expressions = loadAllExpressions()
+            .plus(listOf(divider1, divider2))
+            .sorted()
+        val divider1Index = expressions.indexOf(divider1) + 1
+        val divider2Index = expressions.indexOf(divider2) + 1
+        return divider1Index * divider2Index
+    }
+
+    private fun loadAllExpressions(): List<Expression> {
+        return ResourceFiles.readLines(13)
+            .filter { it.isNotBlank() }
+            .map { parseExpression(it) }
     }
 }
