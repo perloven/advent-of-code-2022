@@ -25,7 +25,10 @@ object DistressSignal {
             } else {
                 compareTo(list.list.first())
             }
+        }
 
+        override fun toString(): String {
+            return value.toString()
         }
     }
 
@@ -38,7 +41,6 @@ object DistressSignal {
         }
 
         private fun compareLists(first: ValueList, second: ValueList): Int {
-            //println("Comparing - $first ?= $second")
             if (first.list.isEmpty() && second.list.isEmpty()) {
                 return 0
             } else if (first.list.isEmpty()) {
@@ -49,22 +51,24 @@ object DistressSignal {
 
             val firstValue = first.list.first()
             val secondValue = second.list.first()
-            //println("Comparing - $firstValue ?= $secondValue")
             val compare = firstValue.compareTo(secondValue)
             if (compare == 0) {
-                //println("$firstValue == $secondValue")
                 return compareLists(ValueList(first.list.drop(1)), ValueList(second.list.drop(1)))
             }
 
             //println("$compare : $first < $second")
             return compare
         }
+
+        override fun toString(): String {
+            return list.joinToString(separator = ",", prefix = "[", postfix = "]")
+        }
     }
 
+    // 6097 is not the right answer
     fun part1(): Int {
         val pairs: List<Pair<Expression, Expression>> = loadExpressions()
-        println(pairs[0].first)
-        println(pairs[0].second)
+        printSerializedExpressions(pairs)
         val comparisons = pairs.map { it.first.compareTo(it.second) }
         return countSumOfOrderedPairs(comparisons)
     }
@@ -85,13 +89,13 @@ object DistressSignal {
     private sealed interface Token
     private object ListOpen : Token {
         override fun toString(): String {
-            return "ListOpen"
+            return "["
         }
     }
 
     private object ListClose : Token {
         override fun toString(): String {
-            return "ListClose"
+            return "]"
         }
     }
 
@@ -102,11 +106,16 @@ object DistressSignal {
     }
 
     private fun parseExpression(line: String): Expression {
-        // tokens: [ ] , number
         val tokens = parseTokens(line.toList())
+        printTokens(tokens)
         return ValueList(list = parseListValues(tokens.drop(1).dropLast(1)))
     }
 
+    private fun printTokens(tokens: List<Token>) {
+        println(tokens.joinToString(separator = " "))
+    }
+
+    // tokens: [ ] , number
     private fun parseTokens(chars: List<Char>): List<Token> {
         //println("Parsing $chars")
         val numbers = '0'.code..'9'.code
@@ -118,7 +127,7 @@ object DistressSignal {
                 curNumber = null
             }
             if (char.code in numbers) {
-                curNumber = char.toString()
+                curNumber = curNumber?.let { it + char.toString() } ?: char.toString()
             } else if (char == '[') {
                 tokens.add(ListOpen)
             } else if (char == ']') {
@@ -165,16 +174,27 @@ object DistressSignal {
     }
 
     private fun countSumOfOrderedPairs(comparisonResults: List<Int>): Int {
+        val indexes = mutableSetOf<Int>()
         var sum = 0
         for ((i, result) in comparisonResults.withIndex()) {
-            if (result < 0) {
+            if (result <= 0) {
                 val index = i + 1
-                println("Add index $index")
+                indexes.add(index)
                 sum += index
             }
         }
+        println("Total comparisons: ${comparisonResults.size}")
+        println("Ordered indexes: $indexes")
 
         return sum
+    }
+
+    private fun printSerializedExpressions(pairs: List<Pair<Expression, Expression>>) {
+        pairs.forEach {
+            println(it.first)
+            println(it.second)
+            println()
+        }
     }
 
     fun part2(): Int {
