@@ -27,21 +27,9 @@ object RegolithReservoir {
             val (min, max) = findWorldBounds(wallPaths)
             this.xBound = 0..max.x + 1
             this.yBound = 0..max.y + 1
-            println("World bounds - min: $min, max: $max")
+            //println("World bounds - min: $min, max: $max")
             this.grid = Array(max.x + 1) { Array(max.y + 10) { Material.AIR } }
             wallPaths.forEach { setWalls(it) }
-        }
-
-        private fun findWorldBounds(paths: List<List<Position>>): Pair<Position, Position> {
-            val minX = paths.minOf { path -> path.minOf { it.x } }
-            val minY = paths.minOf { path -> path.minOf { it.y } }
-            val minBound = Position(minX, minY)
-
-            val maxX = paths.maxOf { path -> path.maxOf { it.x } }
-            val maxY = paths.maxOf { path -> path.maxOf { it.y } }
-            val maxBound = Position(maxX, maxY)
-
-            return Pair(minBound, maxBound)
         }
 
         private fun setWalls(wallPath: List<Position>) {
@@ -176,7 +164,7 @@ object RegolithReservoir {
 
         // 2. Build world
         val world = World(paths)
-        println("Total walls: ${world.countTotalMaterial(Material.WALL)}")
+        //println("Total walls: ${world.countTotalMaterial(Material.WALL)}")
 
         // 3. Run simulation
         runSimulation(world)
@@ -201,14 +189,54 @@ object RegolithReservoir {
     }
 
     private fun runSimulation(world: World) {
-        var placedSand: Position?
+        val source = Position(500, 0)
+        var placedSand: Position? = null
         do {
+            if (placedSand == source) {
+                break
+            }
             placedSand = world.dropSand()
-            println("Placed sand $placedSand")
+            //println("Placed sand $placedSand")
         } while (placedSand != null)
     }
 
     fun part2(): Int {
-        return -2
+        // 1. Parse paths
+        val paths = parsePaths()
+        //println(paths.joinToString(separator = "\n"))
+
+        // 2. Build world with floor
+        val world = buildWorldWithFloor(paths)
+        //println("Total walls: ${world.countTotalMaterial(Material.WALL)}")
+
+        // 3. Run simulation
+        runSimulation(world)
+
+        // 4. Count total sand
+        return world.countTotalMaterial(Material.SAND)
+    }
+
+    private fun findWorldBounds(paths: List<List<Position>>): Pair<Position, Position> {
+        val minX = paths.minOf { path -> path.minOf { it.x } }
+        val minY = paths.minOf { path -> path.minOf { it.y } }
+        val minBound = Position(minX, minY)
+
+        val maxX = paths.maxOf { path -> path.maxOf { it.x } }
+        val maxY = paths.maxOf { path -> path.maxOf { it.y } }
+        val maxBound = Position(maxX, maxY)
+
+        return Pair(minBound, maxBound)
+    }
+
+    private fun buildWorldWithFloor(paths: List<List<Position>>): World {
+        val floorWidth = 1000
+        val (_, max) = findWorldBounds(paths)
+        val maxY = max.y + 2
+        val floor: List<Position> = listOf(
+            Position(0, maxY),
+            Position(floorWidth, maxY)
+        )
+        val pathsWithFloor = paths.toMutableList().apply { add(floor) }
+        return World(pathsWithFloor)
     }
 }

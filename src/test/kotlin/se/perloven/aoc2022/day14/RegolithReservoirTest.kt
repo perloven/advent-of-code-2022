@@ -12,6 +12,6 @@ class RegolithReservoirTest {
 
     @Test
     fun part2() {
-        assertEquals(-2, RegolithReservoir.part2())
+        assertEquals(24659, RegolithReservoir.part2())
     }
 }
