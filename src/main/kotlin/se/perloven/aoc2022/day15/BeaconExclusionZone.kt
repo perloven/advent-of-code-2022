@@ -17,10 +17,7 @@ object BeaconExclusionZone {
         private val excludedRanges: MutableList<IntRange> = mutableListOf()
 
         init {
-            sensors.forEach {
-                // println("registering sensor $it")
-                registerSensor(it)
-            }
+            sensors.forEach { registerSensor(it) }
         }
 
         private fun registerSensor(sensor: Sensor) {
@@ -82,7 +79,6 @@ object BeaconExclusionZone {
         val sensors2 = parseSensors2(lines)
 
         println(sensors2.joinToString(separator = "\n"))
-        return -1
         val beaconPos = findBeaconPos(sensors2)
 
         return calcTuningFrequency(beaconPos)
@@ -99,23 +95,41 @@ object BeaconExclusionZone {
     }
 
     private fun findBeaconPos(sensors2: List<Sensor2>): Position {
-        val coordinateRange = 0..4_000_000
-        for (x in coordinateRange) {
-            for (y in coordinateRange) {
-                val curPos = Position(x, y)
-                if (isOutsideRange(curPos, sensors2)) {
-                    return curPos
-                } else {
-                    println("Beacon not at $curPos")
-                }
-            }
+        val beaconPositions = sensors2
+            .flatMap { getBorderingPositions(it) }
+            .filter { isInGrid(it) }
+            .filter { isOutsideRange(it, sensors2) }
+            .toSet()
+        check(beaconPositions.size == 1) { "Did not find unique beacon position: $beaconPositions" }
+        return beaconPositions.first()
+    }
+
+    private fun getBorderingPositions(sensor2: Sensor2): Iterable<Position> {
+        val borderingPositions = mutableListOf<Position>()
+        val range = sensor2.range + 1
+        val minX = sensor2.pos.x - range
+        val maxX = sensor2.pos.x + range
+        for (x in minX..sensor2.pos.x) {
+            val y = sensor2.pos.y + (x - minX)
+            borderingPositions.add(Position(x, y))
+            borderingPositions.add(Position(x, -y))
+        }
+        for (x in sensor2.pos.x..maxX) {
+            val y = sensor2.pos.y + (maxX - x)
+            borderingPositions.add(Position(x, y))
+            borderingPositions.add(Position(x, -y))
         }
 
-        throw IllegalStateException("Beacon not found")
+        return borderingPositions
+    }
+
+    private fun isInGrid(pos: Position): Boolean {
+        val coordinateRange = 0..4_000_000
+        return pos.x in coordinateRange && pos.y in coordinateRange
     }
 
     private fun isOutsideRange(pos: Position, sensors2: List<Sensor2>): Boolean {
-        return !sensors2.any { isInRange(pos, it) }
+        return sensors2.all { !isInRange(pos, it) }
     }
 
     private fun isInRange(pos: Position, sensor2: Sensor2): Boolean {
