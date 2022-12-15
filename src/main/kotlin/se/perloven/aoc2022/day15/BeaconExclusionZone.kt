@@ -78,7 +78,7 @@ object BeaconExclusionZone {
         val lines = ResourceFiles.readLinesSplit(15)
         val sensors2 = parseSensors2(lines)
 
-        println(sensors2.joinToString(separator = "\n"))
+        //println(sensors2.joinToString(separator = "\n"))
         val beaconPos = findBeaconPos(sensors2)
 
         return calcTuningFrequency(beaconPos)

@@ -12,6 +12,6 @@ class BeaconExclusionZoneTest {
 
     @Test
     fun part2() {
-        assertEquals(-2, BeaconExclusionZone.part2())
+        assertEquals(13734006908372L, BeaconExclusionZone.part2())
     }
 }
