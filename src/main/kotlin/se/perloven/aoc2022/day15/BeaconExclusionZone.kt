@@ -50,7 +50,14 @@ object BeaconExclusionZone {
         val sensors = parseSensors(lines)
 
         val world = World(sensors)
-        println(sensors.joinToString(separator = "\n") { "$it : ${calcManhattanDistance(it.pos, it.closestBeaconPos)}"})
+        println(sensors.joinToString(separator = "\n") {
+            "$it : ${
+                calcManhattanDistance(
+                    it.pos,
+                    it.closestBeaconPos
+                )
+            }"
+        })
         return world.calcNoBeaconPositions()
     }
 
@@ -75,7 +82,53 @@ object BeaconExclusionZone {
         return abs(p1.x - p2.x) + abs(p1.y - p2.y)
     }
 
-    fun part2(): Int {
-        return -2
+    private data class Sensor2(val pos: Position, val range: Int)
+
+    fun part2(): Long {
+        val lines = ResourceFiles.readLinesSplit(15)
+        val sensors2 = parseSensors2(lines)
+
+        println(sensors2.joinToString(separator = "\n"))
+        val beaconPos = findBeaconPos(sensors2)
+
+        return calcTuningFrequency(beaconPos)
+    }
+
+    private fun parseSensors2(lines: List<List<String>>): List<Sensor2> {
+        return parseSensors(lines)
+            .map {
+                Sensor2(
+                    pos = it.pos,
+                    range = calcManhattanDistance(it.pos, it.closestBeaconPos)
+                )
+            }
+    }
+
+    private fun findBeaconPos(sensors2: List<Sensor2>): Position {
+        val coordinateRange = 0..4_000_000
+        for (x in coordinateRange) {
+            for (y in coordinateRange) {
+                val curPos = Position(x, y)
+                if (isOutsideRange(curPos, sensors2)) {
+                    return curPos
+                } else {
+                    println("Beacon not at $curPos")
+                }
+            }
+        }
+
+        throw IllegalStateException("Beacon not found")
+    }
+
+    private fun isOutsideRange(pos: Position, sensors2: List<Sensor2>): Boolean {
+        return sensors2.all { !isInRange(pos, it) }
+    }
+
+    private fun isInRange(pos: Position, sensor2: Sensor2): Boolean {
+        return calcManhattanDistance(pos, sensor2.pos) <= sensor2.range
+    }
+
+    private fun calcTuningFrequency(beaconPos: Position): Long {
+        return beaconPos.x * 4_000_000L + beaconPos.y
     }
 }
