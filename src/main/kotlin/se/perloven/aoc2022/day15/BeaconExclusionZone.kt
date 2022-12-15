@@ -50,14 +50,7 @@ object BeaconExclusionZone {
         val sensors = parseSensors(lines)
 
         val world = World(sensors)
-        println(sensors.joinToString(separator = "\n") {
-            "$it : ${
-                calcManhattanDistance(
-                    it.pos,
-                    it.closestBeaconPos
-                )
-            }"
-        })
+
         return world.calcNoBeaconPositions()
     }
 
@@ -89,6 +82,7 @@ object BeaconExclusionZone {
         val sensors2 = parseSensors2(lines)
 
         println(sensors2.joinToString(separator = "\n"))
+        return -1
         val beaconPos = findBeaconPos(sensors2)
 
         return calcTuningFrequency(beaconPos)
@@ -121,7 +115,7 @@ object BeaconExclusionZone {
     }
 
     private fun isOutsideRange(pos: Position, sensors2: List<Sensor2>): Boolean {
-        return sensors2.all { !isInRange(pos, it) }
+        return !sensors2.any { isInRange(pos, it) }
     }
 
     private fun isInRange(pos: Position, sensor2: Sensor2): Boolean {
