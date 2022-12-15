@@ -5,57 +5,43 @@ import se.perloven.aoc2022.util.ResourceFiles
 import kotlin.math.abs
 
 fun main() {
-    println("Part 1: ${Day15.part1()}")
-    println("Part 2: ${Day15.part2()}")
+    println("Part 1: ${BeaconExclusionZone.part1()}")
+    println("Part 2: ${BeaconExclusionZone.part2()}")
 }
 
-object Day15 {
+object BeaconExclusionZone {
 
     private data class Sensor(val pos: Position, val closestBeaconPos: Position)
 
-    private enum class Material {
-        SENSOR,
-        BEACON,
-        NO_BEACON
-    }
-
     private class World(sensors: List<Sensor>) {
-        private val scanResult: MutableMap<Position, Material> = mutableMapOf()
+        private val excludedRanges: MutableList<IntRange> = mutableListOf()
 
         init {
             sensors.forEach {
-                println("registering sensor $it")
+                // println("registering sensor $it")
                 registerSensor(it)
             }
         }
 
         private fun registerSensor(sensor: Sensor) {
-            scanResult[sensor.pos] = Material.SENSOR
             val distance = calcManhattanDistance(sensor.pos, sensor.closestBeaconPos)
-            val xRange = (sensor.pos.x - distance)..(sensor.pos.x + distance)
-            val yRange = (sensor.pos.y - distance)..(sensor.pos.y + distance)
-            for (x in xRange) {
-                for (y in yRange) {
-                    val curPos = Position(x, y)
-                    if (calcManhattanDistance(sensor.pos, curPos) > distance) {
-                        continue
-                    }
-
-                    val material: Material? = scanResult[curPos]
-                    if (material == null || material == Material.SENSOR || material == Material.BEACON) {
-                        continue
-                    }
-
-                    scanResult[curPos] = Material.NO_BEACON
-                }
+            if (!crossesTheLine(sensor.pos, distance)) {
+                return
             }
+
+            val rangeWidth = distance - abs(2_000_000 - sensor.pos.y)
+            val range = (sensor.pos.x - rangeWidth)..(sensor.pos.x + rangeWidth)
+            excludedRanges.add(range)
+        }
+
+        private fun crossesTheLine(sonarPos: Position, distanceToBeacon: Int): Boolean {
+            return 2_000_000 - abs(sonarPos.y) < distanceToBeacon
         }
 
         fun calcNoBeaconPositions(): Int {
-            return scanResult
-                .filterKeys { it.y == 2_000_000 }
-                .filterValues { it != Material.BEACON }
-                .count()
+            val xs = mutableSetOf<Int>()
+            excludedRanges.forEach { xs.addAll(it.toList()) }
+            return xs.size - 1
         }
     }
 
