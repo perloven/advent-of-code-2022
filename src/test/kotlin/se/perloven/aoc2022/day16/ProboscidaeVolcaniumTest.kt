@@ -4,15 +4,15 @@ import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
 
-class Day16Test {
+class ProboscidaeVolcaniumTest {
 
     @Test
     fun part1() {
-        assertEquals(-1, Day16.part1())
+        assertEquals(-1, ProboscidaeVolcanium.part1())
     }
 
     @Test
     fun part2() {
-        assertEquals(-2, Day16.part2())
+        assertEquals(-2, ProboscidaeVolcanium.part2())
     }
 }

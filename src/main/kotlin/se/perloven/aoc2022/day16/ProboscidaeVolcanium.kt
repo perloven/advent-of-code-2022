@@ -4,11 +4,11 @@ import se.perloven.aoc2022.util.ResourceFiles
 import kotlin.math.max
 
 fun main() {
-    println("Part 1: ${Day16.part1()}")
-    println("Part 2: ${Day16.part2()}")
+    println("Part 1: ${ProboscidaeVolcanium.part1()}")
+    println("Part 2: ${ProboscidaeVolcanium.part2()}")
 }
 
-object Day16 {
+object ProboscidaeVolcanium {
 
     private data class Valve(val name: String, val flowRate: Int, var isOpen: Boolean = false,
                              var connectsTo: Set<Valve> = emptySet()) {
@@ -29,13 +29,17 @@ object Day16 {
     // 2431 is too high
     // 2331 is also too high
     // 2218 is also too high
+    // 2140 is wrong
     fun part1(): Long {
         val graph = loadGraph()
-        println(graph.joinToString("\n"))
-        val totalPossibleFlowRate = graph.sumOf { it.flowRate }
-        println("Total possible flow rate: $totalPossibleFlowRate")
+        //println(graph.joinToString("\n"))
+        //val totalPossibleFlowRate = graph.sumOf { it.flowRate }
+        //println("Total possible flow rate: $totalPossibleFlowRate")
+        val startValve = graph.first { it.name == "AA" }
+
+        println("Looking for maximum released pressure...")
         return -1
-        // findMaxFlowRate(30, 0, 0, emptySet(), graph.first { it.name == "AA" })
+        return findMaxReleasedPressure(1, 0, 0, emptySet(), startValve)
     }
 
     private fun loadGraph(): List<Valve> {
@@ -76,48 +80,62 @@ object Day16 {
     // trying all combinations will lead to SO error. Each valve has more than 2 options on average.
     // lower bound would be options^minutes = 2^30 stack frames.
     // Need to come up with some way of dismissing entire paths after a while.
-    private fun findMaxFlowRate(remainingMinutes: Int, flowRate: Int, pressureReleased: Long, openedValves: Set<Valve>,
-                                currentValve: Valve): Long {
-        if (remainingMinutes <= 0) {
-            val totalPressureReleased = pressureReleased + flowRate
-            println("Time out with total pressure released: $totalPressureReleased (flowRate $flowRate)")
-            return totalPressureReleased
+    private fun findMaxReleasedPressure(minute: Int, flowRate: Int, pressureReleased: Long, openedValves: Set<Valve>,
+                                        currentValve: Valve): Long {
+        if (minute > 30) {
+            return pressureReleased
         }
-        if (remainingMinutes < 25 && (pressureReleased <= 0 || flowRate <= 0)) {
-            return -100
+        /*
+        if (openedValves.size >= 15) {
+            println("All valves open")
+            return pressureReleased + (30 - minute) * flowRate
         }
-        if (remainingMinutes < 16 && (pressureReleased <= 200 || flowRate < 100)) {
-            return -101
+
+         */
+
+        if (minute > 5 && (pressureReleased <= 0 || flowRate <= 0)) {
+            return -105
         }
+        /*
+        if (minute > 10 && (pressureReleased < 10 || flowRate < 5)) {
+            return -110
+        }
+        if (minute > 15 && (pressureReleased < 50 || flowRate < 15)) {
+            return -115
+        }
+
+
+         */
+        if (minute > 10 && flowRate < 30) {
+            return -110
+        }
+        if (minute > 20 && (pressureReleased <= 750 || flowRate < 150)) {
+            return -120
+        }
+        /*
+        if (minute > 25 && (pressureReleased < 1500)) {
+            return -125
+        }
+
+         */
+
+        val nextMinute = minute + 1
+        val nextTotalPressureReleased = pressureReleased + flowRate
         return currentValve.connectsTo.maxOf {
-            if (it in openedValves || it.flowRate == 0) {
-                findMaxFlowRate(remainingMinutes - 1, flowRate, pressureReleased + flowRate, openedValves, it)
+            if (it in openedValves && it.flowRate == 0) {
+                findMaxReleasedPressure(nextMinute, flowRate, nextTotalPressureReleased, openedValves, it)
             } else {
-                max(
-                    findMaxFlowRate(remainingMinutes - 1, flowRate, pressureReleased + flowRate, openedValves, it),
-                    openValve(remainingMinutes - 1, flowRate, pressureReleased + flowRate, openedValves, it)
-                )
+                val pressureIfOpening = openValve(nextMinute, flowRate, pressureReleased, openedValves, it)
+                val pressureIfTraversing = findMaxReleasedPressure(nextMinute, flowRate, nextTotalPressureReleased, openedValves, it)
+                max(pressureIfOpening, pressureIfTraversing)
             }
         }
     }
 
-
-    private fun openValve(remainingMinutes: Int, flowRate: Int, pressureReleased: Long, openedValves: Set<Valve>, currentValve: Valve): Long {
-        if (remainingMinutes <= 0) {
-            val totalPressureReleased = pressureReleased + flowRate
-            println("Time out with total pressure released: $totalPressureReleased (flowRate $flowRate)")
-            return totalPressureReleased
-        }
-        if (remainingMinutes < 20 && (pressureReleased <= 0 || flowRate <= 0)) {
-            return -100
-        }
-        if (remainingMinutes < 10 && pressureReleased <= 200) {
-            return -101
-        }
-
+    private fun openValve(minutes: Int, flowRate: Int, pressureReleased: Long, openedValves: Set<Valve>, currentValve: Valve): Long {
         return currentValve.connectsTo.maxOf {
-            findMaxFlowRate(
-                remainingMinutes = remainingMinutes - 1,
+            findMaxReleasedPressure(
+                minutes + 1,
                 flowRate = flowRate + currentValve.flowRate,
                 pressureReleased = pressureReleased + flowRate,
                 openedValves = openedValves + currentValve,
