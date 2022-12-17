@@ -8,7 +8,7 @@ class PyroclasticFlowTest {
 
     @Test
     fun part1() {
-        assertEquals(-1, PyroclasticFlow.part1())
+        assertEquals(3149, PyroclasticFlow.part1())
     }
 
     @Test
