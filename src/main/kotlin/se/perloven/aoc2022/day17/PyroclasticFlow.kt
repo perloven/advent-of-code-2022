@@ -1,7 +1,8 @@
 package se.perloven.aoc2022.day17
 
 import se.perloven.aoc2022.util.Position
-import se.perloven.aoc2022.util.ResourceFiles
+import java.time.Duration
+import java.time.Instant
 
 fun main() {
     println("Part 1: ${PyroclasticFlow.part1()}")
@@ -10,111 +11,26 @@ fun main() {
 
 object PyroclasticFlow {
 
-    private sealed class Rock(var pos: Position) {
-        abstract val covers: Set<Position>
-        abstract val moveLeftReq: Set<Position>
-        abstract val moveRightReq: Set<Position>
-        abstract val moveDownReq: Set<Position>
-
-        fun moveLeft(): Position {
-            val newPos = Position(pos.x - 1, pos.y)
-            this.pos = newPos
-            return newPos
+    private class Chamber(
+        private val jetPattern: JetPattern,
+        private val height: Int = 10_000,
+        private val rocksToDrop: Long = 2022
+    ) {
+        private companion object {
+            private const val WIDTH = 9
         }
-
-        fun moveRight(): Position {
-            val newPos = Position(pos.x + 1, pos.y)
-            this.pos = newPos
-            return newPos
-        }
-
-        fun fall(): Position {
-            val newPos = Position(pos.x, pos.y - 1)
-            this.pos = newPos
-            return newPos
-        }
-    }
-
-    private class FlatRock(pos: Position) : Rock(pos) {
-        override val covers = setOf(Position(0, 0), Position(1, 0), Position(2, 0), Position(3, 0))
-        override val moveLeftReq = setOf(Position(-1, 0))
-        override val moveRightReq = setOf(Position(4, 0))
-        override val moveDownReq = setOf(Position(0, -1), Position(1, -1), Position(2, -1), Position(3, -1))
-    }
-
-    private class PlusRock(pos: Position) : Rock(pos) {
-        override val covers = setOf(Position(1, 0), Position(0, 1), Position(1, 1), Position(2, 1), Position(1, 2))
-        override val moveLeftReq = setOf(Position(0, 0), Position(-1, 1), Position(0, 2))
-        override val moveRightReq = setOf(Position(2, 0), Position(3, 1), Position(2, 2))
-        override val moveDownReq = setOf(Position(0, 0), Position(1, -1), Position(2, 0))
-    }
-
-    private class StepRock(pos: Position) : Rock(pos) {
-        override val covers = setOf(Position(0, 0), Position(1, 0), Position(2, 0), Position(2, 1), Position(2, 2))
-        override val moveLeftReq = setOf(Position(-1, 0), Position(1, 1), Position(1, 2))
-        override val moveRightReq = setOf(Position(3, 0), Position(3, 1), Position(3, 2))
-        override val moveDownReq = setOf(Position(0, -1), Position(1, -1), Position(2, -1))
-    }
-
-    private class StandingRock(pos: Position) : Rock(pos) {
-        override val covers = setOf(Position(0, 0), Position(0, 1), Position(0, 2), Position(0, 3))
-        override val moveLeftReq = setOf(Position(-1, 0), Position(-1, 1), Position(-1, 2), Position(-1, 3))
-        override val moveRightReq = setOf(Position(1, 0), Position(1, 1), Position(1, 2), Position(1, 3))
-        override val moveDownReq = setOf(Position(0, -1))
-    }
-
-    private class BoxRock(pos: Position) : Rock(pos) {
-        override val covers = setOf(Position(0, 0), Position(1, 0), Position(0, 1), Position(1, 1))
-        override val moveLeftReq = setOf(Position(-1, 0), Position(-1, 1))
-        override val moveRightReq = setOf(Position(2, 0), Position(2, 1))
-        override val moveDownReq = setOf(Position(0, -1), Position(1, -1))
-    }
-
-    private enum class Jet {
-        PUSH_LEFT,
-        PUSH_RIGHT;
-
-        override fun toString(): String {
-            return when (this) {
-                PUSH_LEFT -> "<"
-                PUSH_RIGHT -> ">"
-            }
-        }
-    }
-
-    private class JetPattern(private val jets: List<Jet>) {
-        private var index: Int = 0
-
-        fun getNext(): Jet {
-            if (index >= jets.size) {
-                index = 0
-            }
-            val nextJet = jets[index]
-            index++
-            return nextJet
-        }
-
-        override fun toString(): String {
-            return jets.joinToString(separator = " ")
-        }
-    }
-
-    private class Chamber(jets: List<Jet>) {
         private val rockChamber: Array<BooleanArray> = createRockChamber()
-        private val jetPattern = JetPattern(jets)
-        private var highestRock: Int = 0
+        private var highestRock: Long = 0
         private var droppedRocks: Int = 0
         private var prevRock: Rock = BoxRock(Position(0, -1))
 
         // walls at x=0, x=8
         // floor at y=0
         private fun createRockChamber(): Array<BooleanArray> {
-            val width = 9
-            val height = 10_000
-            val rocks = Array(width) { BooleanArray(height) }
+            val rocks = Array(WIDTH) { BooleanArray(height) }
 
             // floor
-            repeat(width - 1) { x ->
+            repeat(WIDTH - 1) { x ->
                 rocks[x][0] = true
             }
 
@@ -128,11 +44,11 @@ object PyroclasticFlow {
         }
 
         fun dropNextRock(): Boolean {
-            if (droppedRocks >= 2022) {
+            if (droppedRocks >= rocksToDrop) {
                 return false
             }
 
-            val startPos = Position(3, highestRock + 4)
+            val startPos = Position(3, highestRock.toInt() + 4)
             val rock = nextRock(startPos)
             //println("Rock starts at $startPos")
 
@@ -191,16 +107,24 @@ object PyroclasticFlow {
 
             //println(toString())
             positionsToPlace.forEach {
-                check(!rockChamber[it.x][it.y]) { "Trying to place ${rock::class.simpleName} at $it, but it's already rock!" }
-                rockChamber[it.x][it.y] = true
+                check(!isRock(it)) { "Trying to place ${rock::class.simpleName} at $it, but it's already rock!" }
+                setRock(it)
                 if (it.y > highestRock) {
-                    highestRock = it.y
+                    highestRock = it.y.toLong()
                 }
             }
         }
 
         private fun isRock(pos: Position): Boolean {
-            return rockChamber[pos.x][pos.y]
+            return isRock(pos.x, pos.y)
+        }
+
+        private fun isRock(x: Int, y: Int): Boolean {
+            return rockChamber[x][y]
+        }
+
+        private fun setRock(pos: Position) {
+            rockChamber[pos.x][pos.y] = true
         }
 
         private fun nextRock(pos: Position): Rock {
@@ -215,7 +139,7 @@ object PyroclasticFlow {
             return nextRock
         }
 
-        fun getRockHeight(): Int {
+        fun getRockHeight(): Long {
             return highestRock
         }
 
@@ -224,21 +148,49 @@ object PyroclasticFlow {
             for (y in (highestRock + 5) downTo 0) {
                 var row = "$y\t\t"
                 repeat(rockChamber.size) { x ->
-                    val char = if (rockChamber[x][y]) '#' else '.'
+                    val char = if (rockChamber[x][y.toInt()]) '#' else '.'
                     row += char
                 }
                 string += row + "\n"
             }
             return string.take(300)
         }
+
+        fun findFilledRows(): List<Int> {
+            return (1 until height).filter { y -> isRowFilled(y) }
+        }
+
+        private fun isRowFilled(y: Int): Boolean {
+            return (0 until WIDTH).all { x -> isRock(x, y) }
+        }
     }
 
     // 4448 is too high
-    fun part1(): Int {
+    fun part1(): Long {
+        val jetPattern = parseJetPattern()
+        println("Jets: ${jetPattern.size()}")
+        //println(jetPattern)
+
+        val chamber = Chamber(jetPattern = jetPattern, height = 10_000, rocksToDrop = 2022)
+        println("Filled rows: ${chamber.findFilledRows()}")
+
+        val before = Instant.now()
+        while (chamber.dropNextRock()) {
+            // Do nothing, chamber handles logic
+        }
+        val duration = Duration.between(before, Instant.now())
+        //println("1 million rocks took ${duration.toMillis()}")
+        //println(chamber.toString())
+
+        return chamber.getRockHeight()
+    }
+
+    fun part2(): Long {
+        // TODO: try to find a pattern in the jets. Is there a pattern that repeats?
         val jetPattern = parseJetPattern()
         //println(jetPattern)
 
-        val chamber = Chamber(jetPattern)
+        val chamber = Chamber(height = 1_000_000, jetPattern = jetPattern)
 
         while (chamber.dropNextRock()) {
             // Do nothing, chamber handles logic
@@ -246,21 +198,5 @@ object PyroclasticFlow {
         //println(chamber.toString())
 
         return chamber.getRockHeight()
-    }
-
-    private fun parseJetPattern(): List<Jet> {
-        return ResourceFiles.readLines(17)[0].map { parseJet(it) }
-    }
-
-    private fun parseJet(char: Char): Jet {
-        return when (char) {
-            '<' -> Jet.PUSH_LEFT
-            '>' -> Jet.PUSH_RIGHT
-            else -> throw IllegalArgumentException("Invalid jet $char")
-        }
-    }
-
-    fun part2(): Int {
-        return -2
     }
 }
