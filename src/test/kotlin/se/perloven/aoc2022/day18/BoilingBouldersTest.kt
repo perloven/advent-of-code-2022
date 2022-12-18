@@ -13,6 +13,6 @@ class BoilingBouldersTest {
 
     @Test
     fun part2() {
-        assertEquals(-2, BoilingBoulders.part2())
+        assertEquals(2066, BoilingBoulders.part2())
     }
 }
