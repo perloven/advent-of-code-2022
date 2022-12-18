@@ -139,6 +139,10 @@ object PyroclasticFlow {
             return nextRock
         }
 
+        fun getDroppedRocks(): Int {
+            return droppedRocks
+        }
+
         fun getRockHeight(): Long {
             return highestRock
         }
@@ -163,12 +167,16 @@ object PyroclasticFlow {
         private fun isRowFilled(y: Int): Boolean {
             return (0 until WIDTH).all { x -> isRock(x, y) }
         }
+
+        fun lastRock(): Rock {
+            return prevRock
+        }
     }
 
     // 4448 is too high
     fun part1(): Long {
         val jetPattern = parseJetPattern()
-        println("Jets: ${jetPattern.size()}")
+        //println("Jets: ${jetPattern.size()}")
         //println(jetPattern)
 
         val rocks = 2022L
@@ -179,24 +187,37 @@ object PyroclasticFlow {
             // Do nothing, chamber handles logic
         }
         val duration = Duration.between(before, Instant.now())
-        println("Filled rows: ${chamber.findFilledRows()}")
-        println("$rocks rocks dropped in ${duration.toMillis()} ms")
+        //println("Filled rows: ${chamber.findFilledRows()}")
+        //println("$rocks rocks dropped in ${duration.toMillis()} ms")
         //println(chamber.toString())
 
         return chamber.getRockHeight()
     }
 
+    // correct answer: 1553982300884
+    // TODO: code a way to end up with this answer. I did it with math by hand.
     fun part2(): Long {
-        // TODO: try to find a pattern in the jets. Is there a pattern that repeats?
         val jetPattern = parseJetPattern()
         //println(jetPattern)
 
-        val chamber = Chamber(height = 1_000_000, jetPattern = jetPattern)
+        val chamber = Chamber(jetPattern = jetPattern, rocksToDrop = 50455, height = 1_000_000)
 
+        var prevJetIndex = jetPattern.index()
         while (chamber.dropNextRock()) {
-            // Do nothing, chamber handles logic
+            val droppedRocks = chamber.getDroppedRocks()
+            if (droppedRocks == 1728 || droppedRocks == 2500) {
+                println("Dropped rocks: $droppedRocks, height: ${chamber.getRockHeight()}")
+            }
+            val curJetIndex = jetPattern.index()
+            if (curJetIndex < prevJetIndex) {
+                //println("Jet pattern repeats! Last rock: ${chamber.lastRock()::class.simpleName}, dropped rocks: ${chamber.getDroppedRocks()}")
+                //println(chamber)
+            }
+            prevJetIndex = curJetIndex
         }
-        //println(chamber.toString())
+        println(chamber.toString())
+        println("Jet index: ${jetPattern.index()}")
+        println("Last rock: ${chamber.lastRock()::class.simpleName}")
 
         return chamber.getRockHeight()
     }

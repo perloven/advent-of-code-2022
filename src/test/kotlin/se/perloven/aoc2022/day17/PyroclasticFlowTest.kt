@@ -13,6 +13,6 @@ class PyroclasticFlowTest {
 
     @Test
     fun part2() {
-        assertEquals(-2, PyroclasticFlow.part2())
+        assertEquals(1553982300884, PyroclasticFlow.part2())
     }
 }

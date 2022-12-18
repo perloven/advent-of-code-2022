@@ -33,6 +33,10 @@ class JetPattern(private val jets: List<Jet>) {
     fun size(): Int {
         return jets.size
     }
+
+    fun index(): Int {
+        return index
+    }
 }
 
 fun parseJetPattern(): JetPattern {
