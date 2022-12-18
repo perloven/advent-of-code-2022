@@ -171,15 +171,16 @@ object PyroclasticFlow {
         println("Jets: ${jetPattern.size()}")
         //println(jetPattern)
 
-        val chamber = Chamber(jetPattern = jetPattern, height = 10_000, rocksToDrop = 2022)
-        println("Filled rows: ${chamber.findFilledRows()}")
+        val rocks = 2022L
+        val chamber = Chamber(jetPattern = jetPattern, height = 2_000_000, rocksToDrop = rocks)
 
         val before = Instant.now()
         while (chamber.dropNextRock()) {
             // Do nothing, chamber handles logic
         }
         val duration = Duration.between(before, Instant.now())
-        //println("1 million rocks took ${duration.toMillis()}")
+        println("Filled rows: ${chamber.findFilledRows()}")
+        println("$rocks rocks dropped in ${duration.toMillis()} ms")
         //println(chamber.toString())
 
         return chamber.getRockHeight()
