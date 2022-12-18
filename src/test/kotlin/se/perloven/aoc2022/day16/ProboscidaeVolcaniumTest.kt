@@ -8,7 +8,7 @@ class ProboscidaeVolcaniumTest {
 
     @Test
     fun part1() {
-        assertEquals(-1, ProboscidaeVolcanium.part1())
+        assertEquals(1857, ProboscidaeVolcanium.part1())
     }
 
     @Test

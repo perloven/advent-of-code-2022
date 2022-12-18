@@ -1,7 +1,7 @@
 package se.perloven.aoc2022.day16
 
 import se.perloven.aoc2022.util.ResourceFiles
-import kotlin.math.max
+import java.util.*
 
 fun main() {
     println("Part 1: ${ProboscidaeVolcanium.part1()}")
@@ -10,11 +10,146 @@ fun main() {
 
 object ProboscidaeVolcanium {
 
-    private data class Valve(val name: String, val flowRate: Int, var isOpen: Boolean = false,
-                             var connectsTo: Set<Valve> = emptySet()) {
+    private class Graph(private val initialValves: List<Valve>) {
+        companion object {
+            private const val TOTAL_MINUTES = 30
+        }
+        private val optimizedValves: List<Valve> = optimize()
+
+        private fun optimize(): List<Valve> {
+            val toValves = initialValves.filter { hasFlow(it) }
+            val fromValves = toValves + initialValves.first { isStart(it) }
+            val directEdgeValves = fromValves
+                .map { from ->
+                    val edges = toValves
+                        .filter { iv -> iv.name != from.name }
+                        .map { to ->
+                            Edge(
+                                cost = distanceBetween(from, to),
+                                toName = to.name
+                            )
+                        }
+                        .toSet()
+                    Valve(
+                        name = from.name,
+                        flowRate = from.flowRate,
+                        edges = edges,
+                    )
+                }
+            //println("directEdgeValues: ${directEdgeValves.joinToString(separator = "\n")}")
+            directEdgeValves.forEach { valve ->
+                valve.edges.forEach { edge -> edge.to = directEdgeValves.first { it.name == edge.toName } }
+            }
+
+            check(directEdgeValves.count { it.flowRate == 0 } == 1)
+            check(directEdgeValves.first { it.flowRate == 0 }.name == "AA")
+            check(directEdgeValves.all { valve -> valve.edges.all { it.to.flowRate > 0 } })
+            return directEdgeValves
+        }
+
+        private fun isStart(valve: Valve): Boolean {
+            return valve.name == "AA"
+        }
+
+        private fun hasFlow(valve: Valve): Boolean {
+            return valve.flowRate > 0
+        }
+
+        private fun distanceBetween(from: Valve, to: Valve): Int {
+            val foundTo = bfs(from, to)
+            checkNotNull(foundTo) { "Valve ${to.name} could not be found from valve ${from.name}" }
+
+            var distance = 0
+            var curValve: Valve? = foundTo.parent
+            while (curValve != null) {
+                distance++
+                curValve = curValve.parent
+            }
+            resetValves()
+
+            return distance
+        }
+
+        private fun bfs(from: Valve, to: Valve): Valve? {
+            val queue: Queue<Valve> = LinkedList()
+            from.visited = true
+            queue.add(from)
+            while (queue.isNotEmpty()) {
+                val valve = queue.poll()
+                if (valve == to) {
+                    return valve
+                }
+                valve.edges
+                    .filter { !it.to.visited }
+                    .forEach {
+                        it.to.visited = true
+                        it.to.parent = valve
+                        queue.add(it.to)
+                    }
+            }
+
+            return null
+        }
+
+        private fun resetValves() {
+            initialValves.forEach {
+                it.parent = null
+                it.visited = false
+            }
+        }
+
+        fun findMaxReleasedPressure(): Long {
+            val startValve = optimizedValves.first { isStart(it) }
+            return findMaxReleasedPressure(1, 0, 0, emptySet(), startValve)
+        }
+
+        private fun findMaxReleasedPressure(minute: Int, flowRate: Int, pressureReleased: Long,
+                                            openedValves: Set<Valve>, currentValve: Valve): Long {
+            if (minute > TOTAL_MINUTES) {
+                return pressureReleased
+            }
+
+            val viableEdges = currentValve.edges
+                .filter { it.to.flowRate > 0 }
+                .filter { it.to !in openedValves }
+                .filter { it.cost + 1 <= TOTAL_MINUTES - minute }
+            if (viableEdges.isEmpty()) {
+                return pressureReleased + (TOTAL_MINUTES - minute + 1) * flowRate
+            }
+
+            return viableEdges
+                .maxOf {
+                    val totalCost = it.cost + 1 // it.cost is traversal, and then +1 to turn valve on
+                    val newPressureTotal = pressureReleased + (totalCost * flowRate)
+                    val newOpenedValves = openedValves + it.to
+                    check(it.to.flowRate > 0) { "Visiting ${it.to.name} even though it has no flow" }
+                    findMaxReleasedPressure(minute + totalCost, flowRate + it.to.flowRate, newPressureTotal, newOpenedValves, it.to)
+                }
+        }
+
         override fun toString(): String {
-            return "Valve(name=$name, flowRate=$flowRate, connectsTo=${
-                connectsTo.joinToString(prefix = "[", postfix = "]") { it.name }})"
+            return optimizedValves.joinToString(separator = "\n")
+        }
+    }
+
+    private data class Edge(val cost: Int, val toName: String = "", var to: Valve = PLACEHOLDER) {
+        companion object {
+            private val PLACEHOLDER: Valve = Valve(name = "placeholder", flowRate = 0)
+        }
+        override fun toString(): String {
+            return "--$cost--> ${to.name}"
+        }
+    }
+
+    private data class Valve(
+        val name: String, val flowRate: Int, var edges: Set<Edge> = emptySet(),
+        var visited: Boolean = false, var parent: Valve? = null
+    ) {
+
+        override fun toString(): String {
+            return "Valve(name=$name, flowRate=$flowRate, edges=${
+                edges.joinToString(prefix = "[", postfix = "]")
+            })"
         }
 
         override fun hashCode(): Int {
@@ -30,19 +165,22 @@ object ProboscidaeVolcanium {
     // 2331 is also too high
     // 2218 is also too high
     // 2140 is wrong
-    fun part1(): Long {
-        val graph = loadGraph()
-        //println(graph.joinToString("\n"))
-        //val totalPossibleFlowRate = graph.sumOf { it.flowRate }
-        //println("Total possible flow rate: $totalPossibleFlowRate")
-        val startValve = graph.first { it.name == "AA" }
 
-        println("Looking for maximum released pressure...")
-        return -1
-        return findMaxReleasedPressure(1, 0, 0, emptySet(), startValve)
+    // 1392 is wrong
+    // 1492 is wrong
+    fun part1(): Long {
+        val valves = loadValves()
+
+        val graph = Graph(valves)
+
+        //println("Graph: $graph")
+        //println("Max released pressure: ${graph.findMaxReleasedPressure()}")
+
+        //println("Looking for maximum released pressure...")
+        return graph.findMaxReleasedPressure()
     }
 
-    private fun loadGraph(): List<Valve> {
+    private fun loadValves(): List<Valve> {
         val lines = ResourceFiles.readLines(16)
 
         val valvesWithConnections = lines.map { parseValveWithConnections(it) }
@@ -66,7 +204,9 @@ object ProboscidaeVolcanium {
 
     private fun setConnections(valvesWithConnections: List<Pair<Valve, List<String>>>): List<Valve> {
         valvesWithConnections.forEach { pair ->
-            pair.first.connectsTo = pair.second.map { findValveByName(it, valvesWithConnections) }.toSet()
+            pair.first.edges = pair.second
+                .map { Edge(cost = 1, to = findValveByName(it, valvesWithConnections)) }
+                .toSet()
         }
         return valvesWithConnections.map { it.first }
     }
@@ -75,73 +215,6 @@ object ProboscidaeVolcanium {
         return valvesWithConnections
             .map { it.first }
             .firstOrNull { it.name == name } ?: throw IllegalStateException("Found no valve with name $name")
-    }
-
-    // trying all combinations will lead to SO error. Each valve has more than 2 options on average.
-    // lower bound would be options^minutes = 2^30 stack frames.
-    // Need to come up with some way of dismissing entire paths after a while.
-    private fun findMaxReleasedPressure(minute: Int, flowRate: Int, pressureReleased: Long, openedValves: Set<Valve>,
-                                        currentValve: Valve): Long {
-        if (minute > 30) {
-            return pressureReleased
-        }
-        /*
-        if (openedValves.size >= 15) {
-            println("All valves open")
-            return pressureReleased + (30 - minute) * flowRate
-        }
-
-         */
-
-        if (minute > 5 && (pressureReleased <= 0 || flowRate <= 0)) {
-            return -105
-        }
-        /*
-        if (minute > 10 && (pressureReleased < 10 || flowRate < 5)) {
-            return -110
-        }
-        if (minute > 15 && (pressureReleased < 50 || flowRate < 15)) {
-            return -115
-        }
-
-
-         */
-        if (minute > 10 && flowRate < 30) {
-            return -110
-        }
-        if (minute > 20 && (pressureReleased <= 750 || flowRate < 150)) {
-            return -120
-        }
-        /*
-        if (minute > 25 && (pressureReleased < 1500)) {
-            return -125
-        }
-
-         */
-
-        val nextMinute = minute + 1
-        val nextTotalPressureReleased = pressureReleased + flowRate
-        return currentValve.connectsTo.maxOf {
-            if (it in openedValves && it.flowRate == 0) {
-                findMaxReleasedPressure(nextMinute, flowRate, nextTotalPressureReleased, openedValves, it)
-            } else {
-                val pressureIfOpening = openValve(nextMinute, flowRate, pressureReleased, openedValves, it)
-                val pressureIfTraversing = findMaxReleasedPressure(nextMinute, flowRate, nextTotalPressureReleased, openedValves, it)
-                max(pressureIfOpening, pressureIfTraversing)
-            }
-        }
-    }
-
-    private fun openValve(minutes: Int, flowRate: Int, pressureReleased: Long, openedValves: Set<Valve>, currentValve: Valve): Long {
-        return currentValve.connectsTo.maxOf {
-            findMaxReleasedPressure(
-                minutes + 1,
-                flowRate = flowRate + currentValve.flowRate,
-                pressureReleased = pressureReleased + flowRate,
-                openedValves = openedValves + currentValve,
-                currentValve = it
-            )
-        }
     }
 
     fun part2(): Int {
