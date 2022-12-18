@@ -2,6 +2,8 @@ package se.perloven.aoc2022.day16
 
 import se.perloven.aoc2022.util.ResourceFiles
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 fun main() {
     println("Part 1: ${ProboscidaeVolcanium.part1()}")
@@ -12,7 +14,7 @@ object ProboscidaeVolcanium {
 
     private class Graph(private val initialValves: List<Valve>) {
         companion object {
-            private const val TOTAL_MINUTES = 30
+            private const val TOTAL_MINUTES = 26
         }
         private val optimizedValves: List<Valve> = optimize()
 
@@ -98,33 +100,86 @@ object ProboscidaeVolcanium {
             }
         }
 
+        private data class ValveTraversal(val valve: Valve, val traversingFor: Int)
+
+        private data class ViableTargets(val target: Edge, val elephantTarget: Edge)
+
         fun findMaxReleasedPressure(): Long {
             val startValve = optimizedValves.first { isStart(it) }
-            return findMaxReleasedPressure(1, 0, 0, emptySet(), startValve)
+            val startValveTraversal = ValveTraversal(startValve, 0)
+            return findMaxReleasedPressure(1, 0, 0, emptySet(), startValveTraversal, startValveTraversal)
         }
 
         private fun findMaxReleasedPressure(minute: Int, flowRate: Int, pressureReleased: Long,
-                                            openedValves: Set<Valve>, currentValve: Valve): Long {
+                                            openedValves: Set<Valve>, currentValve: ValveTraversal, elephantValve: ValveTraversal): Long {
             if (minute > TOTAL_MINUTES) {
                 return pressureReleased
             }
 
-            val viableEdges = currentValve.edges
-                .filter { it.to.flowRate > 0 }
-                .filter { it.to !in openedValves }
-                .filter { it.cost + 1 <= TOTAL_MINUTES - minute }
-            if (viableEdges.isEmpty()) {
-                return pressureReleased + (TOTAL_MINUTES - minute + 1) * flowRate
+            val viableEdges = if (currentValve.traversingFor <= 0) {
+                currentValve.valve.edges
+                    .filter { it.to.flowRate > 0 }
+                    .filter { it.to !in openedValves }
+                    .filter { (it.cost + 1) <= TOTAL_MINUTES - minute }
+            } else {
+                emptyList()
+            }
+            val viableElephantEdges = if (elephantValve.traversingFor <= 0) {
+                elephantValve.valve.edges
+                    .filter { it.to.flowRate > 0 }
+                    .filter { it.to !in openedValves }
+                    .filter { (it.cost + 1) <= TOTAL_MINUTES - minute }
+            } else {
+                emptyList()
             }
 
-            return viableEdges
-                .maxOf {
-                    val totalCost = it.cost + 1 // it.cost is traversal, and then +1 to turn valve on
-                    val newPressureTotal = pressureReleased + (totalCost * flowRate)
-                    val newOpenedValves = openedValves + it.to
-                    check(it.to.flowRate > 0) { "Visiting ${it.to.name} even though it has no flow" }
-                    findMaxReleasedPressure(minute + totalCost, flowRate + it.to.flowRate, newPressureTotal, newOpenedValves, it.to)
+            if (viableEdges.isEmpty() && viableElephantEdges.isEmpty()) {
+                return pressureReleased + (TOTAL_MINUTES - minute + 1) * flowRate
+            } else if (viableEdges.isEmpty()) {
+                return viableElephantEdges.maxOf {
+                    val totalCost = it.cost + 1
+                    if (elephantValve.traversingFor < totalCost) {
+                        
+                    }
+                    findMaxReleasedPressure(minute + totalCost, flowRate + it.to.flowRate, )
                 }
+            } else if (viableElephantEdges.isEmpty()) {
+                return viableEdges.maxOf {
+                    findMaxReleasedPressure()
+                }
+            }
+            val viableTargets = cartesianProductTargets(viableEdges, viableElephantEdges)
+
+            return viableTargets
+                .maxOf {
+                    val shortestDistance = min(it.target.cost, it.elephantTarget.cost)
+                    val targetTraversal = ValveTraversal(it.target.to, traversingFor = it.target.cost - shortestDistance)
+                    val elephantTraversal = ValveTraversal(it.elephantTarget.to, traversingFor = it.elephantTarget.cost - shortestDistance)
+                    val totalCost = shortestDistance + 1 // +1 to turn the valve on
+                    val newPressureTotal = pressureReleased + (totalCost * flowRate)
+                    val newOpenedValves = openedValves + it.target.to + it.elephantTarget.to
+                    val newFlowRate = if (it.target.cost < it.elephantTarget.cost) {
+                        flowRate + it.target.to.flowRate
+                    } else if (it.target.cost > it.elephantTarget.cost) {
+                        flowRate + it.elephantTarget.to.flowRate
+                    } else {
+                        flowRate + it.target.to.flowRate + it.elephantTarget.to.flowRate
+                    }
+                    check(it.target.to.flowRate > 0) { "Visiting ${it.target.to.name} even though it has no flow" }
+                    check(it.elephantTarget.to.flowRate > 0) { "Visiting ${it.elephantTarget.to.name} even though it has no flow" }
+                    findMaxReleasedPressure(minute + totalCost, newFlowRate, newPressureTotal, newOpenedValves, targetTraversal, elephantTraversal)
+                }
+        }
+
+        private fun cartesianProductTargets(edges: List<Edge>, elephantEdges: List<Edge>): List<ViableTargets> {
+            val viableTargets = mutableListOf<ViableTargets>()
+            edges.forEach { edge ->
+                elephantEdges.forEach { eleEdge ->
+                    viableTargets.add(ViableTargets(target = edge, elephantTarget = eleEdge))
+                }
+            }
+
+            return viableTargets
         }
 
         override fun toString(): String {
