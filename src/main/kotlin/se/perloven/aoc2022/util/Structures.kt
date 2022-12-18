@@ -8,4 +8,10 @@ data class Position(val x: Int, val y: Int) {
     override fun toString(): String {
         return "($x,$y)"
     }
+
+    operator fun plus(other: Position): Position {
+        require((x.toLong() + other.x.toLong()) < Int.MAX_VALUE) { "x is overflowing" }
+        require((y.toLong() + other.y.toLong()) < Int.MAX_VALUE) { "y is overflowing" }
+        return Position(x + other.x, y + other.y)
+    }
 }
