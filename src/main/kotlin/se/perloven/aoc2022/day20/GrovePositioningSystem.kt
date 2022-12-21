@@ -14,7 +14,6 @@ object GrovePositioningSystem {
         private val size = numbers.size
 
         fun move (id: String) {
-            //println(getNumbers())
             val number = numbers.first { it.id == id }
             val curPosition = numbers.indexOfFirst { it.id == id }
             val targetPosition = (((curPosition + number.value) + (1_000_000_000_000 * (size - 1))) % (size - 1)).toInt()
@@ -35,10 +34,6 @@ object GrovePositioningSystem {
             val coord2 = (zeroIndex + 2000) % size
             val coord3 = (zeroIndex + 3000) % size
             return listOf(numbers[coord1], numbers[coord2], numbers[coord3])
-        }
-
-        fun getNumbers(): List<Number> {
-            return numbers
         }
     }
 
@@ -62,30 +57,28 @@ object GrovePositioningSystem {
         val numbers = ResourceFiles.readLines(20).map { parseNumber(it) }
         val mixingOrder: Queue<Number> = LinkedList(numbers)
 
-        return findSumOfCoordinates(numbers, mixingOrder)
+        return findSumOfCoordinates(numbers, mixingOrder, mixes = 1)
     }
 
     private fun parseNumber(line: String): Number {
-        return Number(line.toLong() * 811589153)
+        return Number(line.toLong())
     }
 
-    private fun findSumOfCoordinates(numbers: List<Number>, mixingOrder: Queue<Number>): Long {
+    private fun findSumOfCoordinates(numbers: List<Number>, mixingOrder: Queue<Number>, mixes: Int): Long {
         val encryptedFile = EncryptedFile(numbers.toMutableList())
-        repeat(10) {
+        repeat(mixes) {
             mixingOrder.forEach { encryptedFile.move(it.id) }
         }
 
-        val sumOfCoordinates = encryptedFile.findGroveCoordinates().sumOf { it.value }
-        //println(encryptedFile.getNumbers())
-        return sumOfCoordinates
+        return encryptedFile.findGroveCoordinates().sumOf { it.value }
     }
 
-    // 8837 is too low
     fun part2(): Long {
         val numbers = ResourceFiles.readLines(20).map { parseNumber(it) }
+        val decryptionKey = 811589153L
+        numbers.forEach { it.value *= decryptionKey }
         val mixingOrder: Queue<Number> = LinkedList(numbers)
 
-        //println(numbers)
-        return findSumOfCoordinates(numbers, mixingOrder)
+        return findSumOfCoordinates(numbers, mixingOrder, mixes = 10)
     }
 }
