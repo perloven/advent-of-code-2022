@@ -9,54 +9,49 @@ fun main() {
 
 object MonkeyMatch {
 
-    private sealed interface Operation {
-        fun execute(monkeys: Map<String, Monkey>): Long
+    private sealed interface Expression {
+        fun evaluate(): Long
     }
 
-    private class Value(var value: Int) : Operation {
-        override fun execute(monkeys: Map<String, Monkey>): Long {
-            return value.toLong()
+    private sealed class BinaryExpression(
+        var left: Expression? = null,
+        var right: Expression? = null
+    ) : Expression
+
+    private class Value(var value: Long) : Expression {
+        override fun evaluate(): Long {
+            return value
         }
     }
 
-    private class Add(private val left: String, private val right: String) : Operation {
-        override fun execute(monkeys: Map<String, Monkey>): Long {
-            val leftMonkey = monkeys[left] ?: throw IllegalStateException("Monkey $left not found")
-            val rightMonkey = monkeys[right] ?: throw IllegalStateException("Monkey $right not found")
-            return leftMonkey.operation.execute(monkeys) + rightMonkey.operation.execute(monkeys)
+    private class Add : BinaryExpression() {
+        override fun evaluate(): Long {
+            return left!!.evaluate() + right!!.evaluate()
         }
     }
 
-    private class Subtract(private val left: String, private val right: String) : Operation {
-        override fun execute(monkeys: Map<String, Monkey>): Long {
-            val leftMonkey = monkeys[left] ?: throw IllegalStateException("Monkey $left not found")
-            val rightMonkey = monkeys[right] ?: throw IllegalStateException("Monkey $right not found")
-            return leftMonkey.operation.execute(monkeys) - rightMonkey.operation.execute(monkeys)
+    private class Subtract : BinaryExpression() {
+        override fun evaluate(): Long {
+            return left!!.evaluate() - right!!.evaluate()
         }
     }
 
-    private class Multiply(private val left: String, private val right: String) : Operation {
-        override fun execute(monkeys: Map<String, Monkey>): Long {
-            val leftMonkey = monkeys[left] ?: throw IllegalStateException("Monkey $left not found")
-            val rightMonkey = monkeys[right] ?: throw IllegalStateException("Monkey $right not found")
-            return leftMonkey.operation.execute(monkeys) * rightMonkey.operation.execute(monkeys)
+    private class Multiply : BinaryExpression() {
+        override fun evaluate(): Long {
+            return left!!.evaluate() * right!!.evaluate()
         }
     }
 
-    private class Divide(private val left: String, private val right: String) : Operation {
-        override fun execute(monkeys: Map<String, Monkey>): Long {
-            val leftMonkey = monkeys[left] ?: throw IllegalStateException("Monkey $left not found")
-            val rightMonkey = monkeys[right] ?: throw IllegalStateException("Monkey $right not found")
-            return leftMonkey.operation.execute(monkeys) / rightMonkey.operation.execute(monkeys)
+    private class Divide : BinaryExpression() {
+        override fun evaluate(): Long {
+            return left!!.evaluate() / right!!.evaluate()
         }
     }
 
-    private class Equal(private val left: String, private val right: String) : Operation {
-        override fun execute(monkeys: Map<String, Monkey>): Long {
-            val leftMonkey = monkeys[left] ?: throw IllegalStateException("Monkey $left not found")
-            val rightMonkey = monkeys[right] ?: throw IllegalStateException("Monkey $right not found")
-            val leftValue = leftMonkey.operation.execute(monkeys)
-            val rightValue = rightMonkey.operation.execute(monkeys)
+    private class Equal : BinaryExpression() {
+        override fun evaluate(): Long {
+            val leftValue = left!!.evaluate()
+            val rightValue = right!!.evaluate()
             return if (leftValue == rightValue) {
                 leftValue
             } else {
@@ -65,15 +60,51 @@ object MonkeyMatch {
         }
     }
 
-    private data class Monkey(val name: String, val operation: Operation)
+    private data class Monkey(val name: String, val operandNames: Pair<String, String> = Pair("place", "holder"), val expression: Expression)
 
     fun part1(): Long {
-        val monkeys: Map<String, Monkey> = parseMonkeyInput()
+        val monkeys: Map<String, Monkey> = parseMonkeyInputPart1()
 
         val rootMonkey = monkeys["root"] ?: throw IllegalStateException("root monkey not found")
 
-        //return rootMonkey.operation.execute(monkeys)
-        return -1
+        return rootMonkey.expression.evaluate()
+    }
+
+    private fun parseMonkeyInputPart1(): Map<String, Monkey> {
+        val monkeyList = ResourceFiles.readLinesSplit(21).map { parseMonkeyPart1(it) }
+        val monkeyMap: Map<String, Monkey> = monkeyList.associateBy { it.name }
+        monkeyMap.forEach { (_, monkey) ->
+            val monkeyExpression = monkey.expression
+            if (monkeyExpression is BinaryExpression) {
+                monkeyExpression.left = monkeyMap[monkey.operandNames.first]!!.expression
+                monkeyExpression.right = monkeyMap[monkey.operandNames.second]!!.expression
+            }
+        }
+        return monkeyMap
+    }
+
+    private fun parseMonkeyPart1(line: List<String>): Monkey {
+        val name = line[0].dropLast(1)
+        val testValue = line[1].toLongOrNull()
+        val operation = if (testValue != null) {
+            Value(testValue)
+        } else if (line[2] == "+") {
+            Add()
+        } else if (line[2] == "-") {
+            Subtract()
+        } else if (line[2] == "*") {
+            Multiply()
+        } else if (line[2] == "/") {
+            Divide()
+        } else {
+            throw IllegalArgumentException("Unable to parse monkey from line: $line")
+        }
+
+        return if (operation is Value) {
+            Monkey(name = name, expression = operation)
+        } else {
+            Monkey(name = name, operandNames = Pair(line[1], line[3]), expression = operation)
+        }
     }
 
     // not within range (-1000000)..1000000
@@ -90,9 +121,9 @@ object MonkeyMatch {
         val human = monkeys["humn"] ?: throw IllegalStateException("human not found")
 
         for (i in (-100)..100) {
-            (human.operation as Value).value = i
+            (human.expression as Value).value = i.toLong()
             try {
-                rootMonkey.operation.execute(monkeys)
+                rootMonkey.expression.evaluate()
             } catch (e: IllegalStateException) {
                 continue
             }
@@ -104,28 +135,40 @@ object MonkeyMatch {
 
     private fun parseMonkeyInput(): Map<String, Monkey> {
         val monkeyList = ResourceFiles.readLinesSplit(21).map { parseMonkey(it) }
-        return monkeyList.associateBy { it.name }
+        val monkeyMap: Map<String, Monkey> = monkeyList.associateBy { it.name }
+        monkeyMap.forEach { (_, monkey) ->
+            val monkeyExpression = monkey.expression
+            if (monkeyExpression is BinaryExpression) {
+                monkeyExpression.left = monkeyMap[monkey.operandNames.first]!!.expression
+                monkeyExpression.right = monkeyMap[monkey.operandNames.second]!!.expression
+            }
+        }
+        return monkeyMap
     }
 
     private fun parseMonkey(line: List<String>): Monkey {
         val name = line[0].dropLast(1)
-        val testValue = line[1].toIntOrNull()
+        val testValue = line[1].toLongOrNull()
         val operation = if (testValue != null) {
             Value(testValue)
         } else if (name == "root") {
-            Equal(left = line[1], right = line[3])
-        } else if (line[2] == "+")  {
-            Add(left = line[1], right = line[3])
+            Equal()
+        } else if (line[2] == "+") {
+            Add()
         } else if (line[2] == "-") {
-            Subtract(left = line[1], right = line[3])
+            Subtract()
         } else if (line[2] == "*") {
-            Multiply(left = line[1], right = line[3])
+            Multiply()
         } else if (line[2] == "/") {
-            Divide(left = line[1], right = line[3])
+            Divide()
         } else {
             throw IllegalArgumentException("Unable to parse monkey from line: $line")
         }
 
-        return Monkey(name = name, operation = operation)
+        return if (operation is Value) {
+            Monkey(name = name, expression = operation)
+        } else {
+            Monkey(name = name, operandNames = Pair(line[1], line[3]), expression = operation)
+        }
     }
 }
