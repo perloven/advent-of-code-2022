@@ -8,7 +8,7 @@ class MonkeyMatchTest {
 
     @Test
     fun part1() {
-        assertEquals(-1, MonkeyMatch.part1())
+        assertEquals(286698846151845L, MonkeyMatch.part1())
     }
 
     @Test
