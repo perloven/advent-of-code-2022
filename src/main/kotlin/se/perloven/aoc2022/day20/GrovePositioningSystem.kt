@@ -17,7 +17,7 @@ object GrovePositioningSystem {
             //println(getNumbers())
             val number = numbers.first { it.id == id }
             val curPosition = numbers.indexOfFirst { it.id == id }
-            val targetPosition = ((curPosition + number.value) + (20 * (size - 1))) % (size - 1)
+            val targetPosition = (((curPosition + number.value) + (1_000_000_000_000 * (size - 1))) % (size - 1)).toInt()
             val removedNumber = if (targetPosition > curPosition) {
                 numbers.add(targetPosition + 1, number)
                 numbers.removeAt(curPosition)
@@ -30,7 +30,7 @@ object GrovePositioningSystem {
         }
 
         fun findGroveCoordinates(): List<Number> {
-            val zeroIndex = numbers.indexOfFirst { it.value == 0 }
+            val zeroIndex = numbers.indexOfFirst { it.value == 0L }
             val coord1 = (zeroIndex + 1000) % size
             val coord2 = (zeroIndex + 2000) % size
             val coord3 = (zeroIndex + 3000) % size
@@ -42,7 +42,7 @@ object GrovePositioningSystem {
         }
     }
 
-    private data class Number(val value: Int) {
+    private data class Number(var value: Long) {
         val id = UUID.randomUUID().toString()
 
         override fun equals(other: Any?): Boolean {
@@ -58,26 +58,21 @@ object GrovePositioningSystem {
         }
     }
 
-    // 6328 is too low
-    // 3540 is too low
-    // -19092 is wrong
-    fun part1(): Int {
+    fun part1(): Long {
         val numbers = ResourceFiles.readLines(20).map { parseNumber(it) }
         val mixingOrder: Queue<Number> = LinkedList(numbers)
 
-        //println(numbers)
         return findSumOfCoordinates(numbers, mixingOrder)
     }
 
     private fun parseNumber(line: String): Number {
-        return Number(line.toInt())
+        return Number(line.toLong() * 811589153)
     }
 
-    private fun findSumOfCoordinates(numbers: List<Number>, mixingOrder: Queue<Number>): Int {
+    private fun findSumOfCoordinates(numbers: List<Number>, mixingOrder: Queue<Number>): Long {
         val encryptedFile = EncryptedFile(numbers.toMutableList())
-        while (mixingOrder.peek() != null) {
-            val next = mixingOrder.poll()
-            encryptedFile.move(next.id)
+        repeat(10) {
+            mixingOrder.forEach { encryptedFile.move(it.id) }
         }
 
         val sumOfCoordinates = encryptedFile.findGroveCoordinates().sumOf { it.value }
@@ -85,7 +80,12 @@ object GrovePositioningSystem {
         return sumOfCoordinates
     }
 
-    fun part2(): Int {
-        return -2
+    // 8837 is too low
+    fun part2(): Long {
+        val numbers = ResourceFiles.readLines(20).map { parseNumber(it) }
+        val mixingOrder: Queue<Number> = LinkedList(numbers)
+
+        //println(numbers)
+        return findSumOfCoordinates(numbers, mixingOrder)
     }
 }
