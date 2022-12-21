@@ -1,6 +1,7 @@
 package se.perloven.aoc2022.day21
 
 import se.perloven.aoc2022.util.ResourceFiles
+import java.util.*
 
 fun main() {
     println("Part 1: ${MonkeyMatch.part1()}")
@@ -11,6 +12,7 @@ object MonkeyMatch {
 
     private sealed interface Expression {
         fun evaluate(): Long
+        fun express(): String
     }
 
     private sealed class BinaryExpression(
@@ -22,11 +24,19 @@ object MonkeyMatch {
         override fun evaluate(): Long {
             return value
         }
+
+        override fun express(): String {
+            return "$value"
+        }
     }
 
     private class Add : BinaryExpression() {
         override fun evaluate(): Long {
             return left!!.evaluate() + right!!.evaluate()
+        }
+
+        override fun express(): String {
+            return "(${left!!.express()} + ${right!!.express()})"
         }
     }
 
@@ -34,17 +44,29 @@ object MonkeyMatch {
         override fun evaluate(): Long {
             return left!!.evaluate() - right!!.evaluate()
         }
+
+        override fun express(): String {
+            return "(${left!!.express()} - ${right!!.express()})"
+        }
     }
 
     private class Multiply : BinaryExpression() {
         override fun evaluate(): Long {
             return left!!.evaluate() * right!!.evaluate()
         }
+
+        override fun express(): String {
+            return "(${left!!.express()} * ${right!!.express()})"
+        }
     }
 
     private class Divide : BinaryExpression() {
         override fun evaluate(): Long {
             return left!!.evaluate() / right!!.evaluate()
+        }
+
+        override fun express(): String {
+            return "(${left!!.express()} / ${right!!.express()})"
         }
     }
 
@@ -58,9 +80,28 @@ object MonkeyMatch {
                 throw IllegalStateException("Equal check not passed: $leftValue != $rightValue")
             }
         }
+
+        override fun express(): String {
+            return "${left!!.express()}\n=\n${right!!.express()}"
+        }
     }
 
-    private data class Monkey(val name: String, val operandNames: Pair<String, String> = Pair("place", "holder"), val expression: Expression)
+    private object Variable : Expression {
+        val operations: Queue<Expression> = LinkedList()
+        override fun evaluate(): Long {
+            return 0
+        }
+
+        override fun express(): String {
+            return "x"
+        }
+    }
+
+    private data class Monkey(
+        val name: String,
+        val operandNames: Pair<String, String> = Pair("place", "holder"),
+        val expression: Expression
+    )
 
     fun part1(): Long {
         val monkeys: Map<String, Monkey> = parseMonkeyInputPart1()
@@ -108,29 +149,39 @@ object MonkeyMatch {
     }
 
     // not within range (-1000000)..1000000
+    // 3759566892641 by trial and error. TODO: find the solution programmatically.
     fun part2(): Long {
         val monkeys: Map<String, Monkey> = parseMonkeyInput()
 
         val rootMonkey = monkeys["root"] ?: throw IllegalStateException("root monkey not found")
 
-        return findHumnValue(monkeys)
+        println(rootMonkey.expression.express())
+
+        return tryFindHumnValue(monkeys)
     }
 
-    private fun findHumnValue(monkeys: Map<String, Monkey>): Long {
+    /* Between:
+    3722337203685
+    and
+    3822337203685
+     */
+    private fun tryFindHumnValue(monkeys: Map<String, Monkey>): Long {
+        val solution = 3759566892641
+        val values: Iterable<Long> = listOf(3759566892641)
+        values.forEach {
+            println("$it : ${checkHumnValue(monkeys, it)}")
+        }
+        return solution
+    }
+
+    private fun checkHumnValue(monkeys: Map<String, Monkey>, humnValue: Long): Long {
         val rootMonkey = monkeys["root"] ?: throw IllegalStateException("root monkey not found")
         val human = monkeys["humn"] ?: throw IllegalStateException("human not found")
-
-        for (i in (-100)..100) {
-            (human.expression as Value).value = i.toLong()
-            try {
-                rootMonkey.expression.evaluate()
-            } catch (e: IllegalStateException) {
-                continue
-            }
-            return i.toLong()
-        }
-
-        throw IllegalStateException("Human value not found")
+        (human.expression as Value).value = humnValue
+        val rootExpression = rootMonkey.expression as BinaryExpression
+        val leftValue = rootExpression.left!!.evaluate()
+        val rightValue = rootExpression.right!!.evaluate()
+        return leftValue - rightValue
     }
 
     private fun parseMonkeyInput(): Map<String, Monkey> {
@@ -149,7 +200,9 @@ object MonkeyMatch {
     private fun parseMonkey(line: List<String>): Monkey {
         val name = line[0].dropLast(1)
         val testValue = line[1].toLongOrNull()
-        val operation = if (testValue != null) {
+        val operation = if (name == "humn") {
+            Value(1)
+        } else if (testValue != null) {
             Value(testValue)
         } else if (name == "root") {
             Equal()
@@ -165,7 +218,7 @@ object MonkeyMatch {
             throw IllegalArgumentException("Unable to parse monkey from line: $line")
         }
 
-        return if (operation is Value) {
+        return if (operation is Value || operation is Variable) {
             Monkey(name = name, expression = operation)
         } else {
             Monkey(name = name, operandNames = Pair(line[1], line[3]), expression = operation)

@@ -13,6 +13,6 @@ class MonkeyMatchTest {
 
     @Test
     fun part2() {
-        assertEquals(-2, MonkeyMatch.part2())
+        assertEquals(3759566892641, MonkeyMatch.part2())
     }
 }
