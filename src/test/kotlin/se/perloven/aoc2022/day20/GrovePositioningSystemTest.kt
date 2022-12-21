@@ -7,7 +7,7 @@ class GrovePositioningSystemTest {
 
     @Test
     fun part1() {
-        assertEquals(-1, GrovePositioningSystem.part1())
+        assertEquals(11123, GrovePositioningSystem.part1())
     }
 
     @Test
